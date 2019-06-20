@@ -72,7 +72,7 @@
 
 ;;; Core Variabels
 
-(defvar binder-alist
+(defvar binder-alist-cache
   nil
   "Global binder alist data.")
 
@@ -87,25 +87,25 @@
                                   binder-default-file))))
     (if (file-readable-p binder-file) binder-file)))
 
-(defun binder-read ()
+(defun binder-read (&optional dir)
   (or dir (setq dir default-directory))
-  (let ((binder-file (or (binder-find-binder-file)
+  (let ((binder-file (or (binder-find-binder-file dir)
                          (user-error "No binder file found"))))
-    (unless (and (string= dir (get 'binder-alist 'dir))
+    (unless (and (string= dir (get 'binder-alist-cache 'dir))
                  (time-less-p (file-attribute-modification-time
                                (file-attributes binder-file))
-                              (get 'binder-alist 'modtime)))
+                              (get 'binder-alist-cache 'modtime)))
       (with-temp-buffer
         (insert-file-contents binder-file)
-        (setq binder-alist (read (current-buffer)))))
-    (put 'binder-alist 'dir dir)
-    (put 'binder-alist 'modtime (current-time)))
-  binder-alist)
+        (setq binder-alist-cache (read (current-buffer)))))
+    (put 'binder-alist-cache 'dir dir)
+    (put 'binder-alist-cache 'modtime (current-time)))
+  binder-alist-cache)
 
-(defun binder-write ()
+(defun binder-write (&optional dir)
   (interactive)
   (let ((binder-file
-         (or (binder-find-binder-file)
+         (or (binder-find-binder-file dir)
              (if (y-or-n-p (format "Create `%s' in %s? "
                                    binder-default-file default-directory))
                  (expand-file-name binder-default-file)))))
@@ -130,7 +130,7 @@
 ;;; Global Minor Mode
 
 (defun binder-next-file (&optional n)
-  "Goto Nth next file in `binder-alist'.
+  "Goto Nth next file in binder.
 Or goto Nth previous file if N is negative."
   (interactive "p")
   ;; FIXME: error on dired buffers
@@ -155,10 +155,23 @@ Or goto Nth previous file if N is negative."
          (define-key map "[" #'binder-previous-file) map)))))
 
 (defun binder-previous-file (&optional n)
-  "Goto Nth previous file in `binder-alist'.
+  "Goto Nth previous file in binder.
 Or goto Nth next file if N is negative."
   (interactive "p")
   (binder-next-file (- n)))
+
+(defun binder-toggle-sidebar ()
+  (interactive)
+  (let ((display-buffer-mark-dedicated t)
+        (dir default-directory)
+        (buffer (binder-sidebar-create)))
+    (if (get-buffer-window buffer (selected-frame))
+        (delete-windows-on buffer (selected-frame))
+      (display-buffer-in-side-window buffer binder-sidebar-display-alist)
+      (with-current-buffer buffer
+        (setq default-directory dir))
+      (if binder-sidebar-select-window
+          (select-window (get-buffer-window buffer (selected-frame)))))))
 
 (defvar binder-mode-map (make-sparse-keymap))
 
@@ -191,35 +204,34 @@ See `display-buffer-in-side-window' for example options."
   "If non-nil, switch to binder sidebar upon displaying it."
   :type 'boolean)
 
+(defun binder-sidebar-create ()
+  (with-current-buffer (get-buffer-create "*Binder Sidebar*")
+    (binder-sidebar-list)
+    (binder-sidebar-mode)
+    (current-buffer)))
+
 (defun binder-sidebar-list ()
-  (let ((buffer (get-buffer-create "*Binder Sidebar*"))
-        (structure (binder-get-structure)))
-        (with-current-buffer buffer
-          (with-silent-modifications
-            (let ((x (point)))
-              (erase-buffer)
-              (dolist (item structure)
-                (let ((id (car item))
-                      (filename (alist-get 'filename item))
-                      (notes (alist-get 'notes item))
-                      (tags (alist-get 'tags item)))
-                  (insert " "
-                          (cond ((and filename (not (file-exists-p filename)))
-                                 "?")
-                                ((and notes (not (string-empty-p notes)))
-                                 "*")
-                                (t " "))
-                          " " id)
-                  (put-text-property (line-beginning-position)
-                                     (line-end-position)
-                                     'binder-id id)
-                  (put-text-property (line-beginning-position)
-                                     (line-end-position)
-                                     'front-sticky '(binder-id))
-                  (insert "\n")))
-              (goto-char x))
-            (binder-sidebar-mode))
-          (current-buffer))))
+  (with-silent-modifications
+    (let ((x (point)))
+      (erase-buffer)
+      (dolist (item (binder-get-structure))
+        (let ((id (car item))
+              (filename (alist-get 'filename item))
+              (notes (alist-get 'notes item))
+              (tags (alist-get 'tags item)))
+          (insert " "
+                  (cond ((and filename (not (file-exists-p filename)))
+                         "?")
+                        ((and notes (not (string-empty-p notes)))
+                         "*")
+                        (t " "))
+                  " " id)
+          (put-text-property (line-beginning-position) (line-end-position)
+                             'binder-id id)
+          (put-text-property (line-beginning-position) (line-end-position)
+                             'front-sticky '(binder-id))
+          (insert "\n")))
+      (goto-char x))))
 
 (defun binder-sidebar-refresh ()
   (interactive)
@@ -261,26 +273,45 @@ See `display-buffer-in-side-window' for example options."
                        'face nil)
     (forward-line 1)))
 
+(defun binder-get-index (id)
+  (seq-position (binder-get-structure) (binder-get-item id) 'eq))
+
 (defun binder-sidebar-get-index ()
-  (let (item)
-    (setq item (binder-get-item (binder-sidebar-get-id)))
-    (seq-position (binder-get-structure) item 'eq)))
-)
+  (binder-get-index (binder-sidebar-get-id)))
+
+(defun binder-delete-item (id)
+  (setcdr (assq 'structure (binder-read))
+          (delq (binder-get-item id) (binder-get-structure))))
+
+(defun binder-sidebar-delete-item ()
+  (binder-delete-item (binder-sidebar-get-id)))
+
+(defun binder-insert-item (item index)
+  (let ((structure (binder-get-structure)))
+    (setcdr (assq 'structure (binder-read))
+            (nconc (seq-take structure index)
+                   (cons item (seq-drop structure index))))))
+
+(defun binder-sidebar-goto-item (id)
+  (goto-char (point-min))
+  (let (found)
+    (while (and (< (point) (point-max))
+                (not found))
+      (if (string= (binder-sidebar-get-id) id)
+          (setq found t)
+        (forward-line 1)))))
 
 (defun binder-sidebar-shift-down (&optional n)
   (interactive "p")
   (let ((p (if (<= n 0) -1 1))
-        (structure (binder-get-structure))
-        (index (binder-sidebar-get-index))
-        tail)
-    (setq tail (copy-sequence (nthcdr index structure)))
-    (setcar (nthcdr index structure)
-            (nth (+ index p) structure))
-    (setcar (nthcdr (+ index p) structure)
-            (car tail))
+        (id (binder-sidebar-get-id))
+        item index)
+    (setq item (binder-get-item id)
+          index (binder-get-index id))
+    (binder-delete-item id)
+    (binder-insert-item item (+ index p))
     (binder-sidebar-list)
-    ;; This won't work forever...
-    (forward-line p)))
+    (binder-sidebar-goto-item id)))
 
 (defun binder-sidebar-shift-up (&optional n)
   (interactive "p")
@@ -311,19 +342,6 @@ See `display-buffer-in-side-window' for example options."
       (if mode (funcall mode))
       (view-mode t))
     (pop-to-buffer buffer)))
-
-(defun binder-toggle-sidebar ()
-  (interactive)
-  (let ((display-buffer-mark-dedicated t)
-        (dir default-directory)
-        (buffer (binder-sidebar-list)))
-    (if (get-buffer-window buffer (selected-frame))
-        (delete-windows-on buffer (selected-frame))
-      (display-buffer-in-side-window buffer binder-sidebar-display-alist)
-      (with-current-buffer buffer
-        (setq default-directory dir))
-      (if binder-sidebar-select-window
-          (select-window (get-buffer-window buffer (selected-frame)))))))
 
 ;;;###autoload
 (define-derived-mode binder-sidebar-mode
