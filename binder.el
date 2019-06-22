@@ -79,17 +79,16 @@
 
 ;;; Core Functions
 
-(defun binder-find-binder-file (&optional dir)
-  (let ((binder-file
-         (expand-file-name
-          binder-default-file
-          (locate-dominating-file (or dir default-directory)
-                                  binder-default-file))))
+(defun binder-root ()
+  (locate-dominating-file default-directory binder-default-file))
+
+(defun binder-find-binder-file ()
+  (let ((binder-file (expand-file-name binder-default-file (binder-root))))
     (if (file-readable-p binder-file) binder-file)))
 
-(defun binder-read (&optional dir)
-  (or dir (setq dir default-directory))
-  (let ((binder-file (or (binder-find-binder-file dir)
+(defun binder-read ()
+  (let ((dir default-directory)
+        (binder-file (or (binder-find-binder-file)
                          (user-error "No binder file found"))))
     (unless (and (string= dir (get 'binder-alist-cache 'dir))
                  (time-less-p (file-attribute-modification-time
@@ -102,9 +101,9 @@
     (put 'binder-alist-cache 'modtime (current-time)))
   binder-alist-cache)
 
-(defun binder-write (&optional dir)
+(defun binder-write ()
   (let ((binder-file
-         (or (binder-find-binder-file dir)
+         (or (binder-find-binder-file)
              (if (y-or-n-p (format "Create `%s' in %s? "
                                    binder-default-file default-directory))
                  (expand-file-name binder-default-file)))))
@@ -115,6 +114,19 @@
 ;; probably shouldn't edit it.\n\n"
               (pp (binder-read)))
       (write-file binder-file))))
+
+(defun binder-get-id-for-file (filename)
+  (let (id)
+    (dolist (item (binder-get-structure))
+      (if (string= (alist-get 'filename item) filename)
+          (setq id (car item))))
+    id))
+
+(defun binder-file-relative-to-root (filename)
+  (let ((root (binder-root)))
+    (when root
+      (string-trim (expand-file-name filename)
+                   (expand-file-name root)))))
 
 (defun binder-get-structure ()
   (alist-get 'structure (binder-read)))
@@ -133,10 +145,11 @@
 Or goto Nth previous file if N is negative."
   (interactive "p")
   ;; FIXME: error on dired buffers
-  (let* ((this-file (file-name-nondirectory (buffer-file-name)))
-         (structure (binder-get-structure))
-         item index next-index next-file)
-    (setq item (binder-get-item this-file))
+  (let ((this-file (or (buffer-file-name) default-directory))
+        (structure (binder-get-structure))
+        item index next-index next-file)
+    (setq this-file (binder-file-relative-to-root this-file)
+          item (binder-get-item (binder-get-id-for-filename this-file)))
     (if (not item)
         (user-error "Item `%s' not in a binder" this-file)
       (setq index (seq-position structure item 'eq)
@@ -145,7 +158,7 @@ Or goto Nth previous file if N is negative."
                (< next-index (length structure)))
           (and
            (setq next-file (expand-file-name (car (nth next-index structure))
-                                             default-directory))
+                                             (binder-root)))
            (find-file-existing next-file))
         (message "End of binder"))
       (set-transient-map
