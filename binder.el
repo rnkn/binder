@@ -103,7 +103,6 @@
   binder-alist-cache)
 
 (defun binder-write (&optional dir)
-  (interactive)
   (let ((binder-file
          (or (binder-find-binder-file dir)
              (if (y-or-n-p (format "Create `%s' in %s? "
@@ -184,7 +183,6 @@ Or goto Nth next file if N is negative."
   "Globally interact with `binder'."
   :init-value nil
   :lighter binder-mode-lighter
-  :keymap binder-mode-map
   :global t)
 
 
@@ -198,6 +196,26 @@ Or goto Nth next file if N is negative."
 
 See `display-buffer-in-side-window' for example options."
   :type 'alist)
+
+(defcustom binder-sidebar-dir-char
+  ?+
+  "Character to display on direcotry."
+  :type 'character)
+
+(defcustom binder-sidebar-include-char
+  ?x
+  "Character to display on items including in joining."
+  :type 'character)
+
+(defcustom binder-sidebar-notes-char
+  ?*
+  "Character to display on items with notes."
+  :type 'character)
+
+(defcustom binder-sidebar-missing-char
+  ??
+  "Character to display on items with missing files."
+  :type 'character)
 
 (defcustom binder-sidebar-select-window
   t
@@ -218,19 +236,24 @@ See `display-buffer-in-side-window' for example options."
         (let ((id (car item))
               (filename (alist-get 'filename item))
               (notes (alist-get 'notes item))
-              (tags (alist-get 'tags item)))
-          (insert " "
+              (tags (alist-get 'tags item))
+              (level 1))
+          (insert ?\s
                   (cond ((and filename (not (file-exists-p filename)))
-                         "?")
+                         binder-sidebar-missing-char)
                         ((and notes (not (string-empty-p notes)))
-                         "*")
-                        (t " "))
-                  " " id)
+                         binder-sidebar-notes-char)
+                        (t ?\s))
+                  ?\s
+                  (if (file-directory-p filename)
+                      binder-sidebar-dir-char ?\s)
+                  (make-string level ?\s)
+                  id)
           (put-text-property (line-beginning-position) (line-end-position)
                              'binder-id id)
           (put-text-property (line-beginning-position) (line-end-position)
                              'front-sticky '(binder-id))
-          (insert "\n")))
+          (insert ?\n)))
       (goto-char x))))
 
 (defun binder-sidebar-refresh ()
@@ -249,6 +272,10 @@ See `display-buffer-in-side-window' for example options."
      (alist-get 'filename (binder-get-item
                            (or (binder-sidebar-get-id)
                                (user-error "No item at point")))))))
+
+(defun binder-sidebar-save ()
+  (interactive)
+  (binder-write))
 
 (defun binder-sidebar-mark ()
   (interactive)
@@ -319,17 +346,15 @@ See `display-buffer-in-side-window' for example options."
 
 (defun binder-sidebar-multiview ()
   (interactive)
-  (let ((alist (binder-read))
-        buffer mode filename-list)
-    (setq buffer (get-buffer-create "*Binder Multiview*")
-          mode (alist-get 'default-mode alist))
+  (let ((buffer (get-buffer-create "*Binder Multiview*"))
+        (mode (alist-get 'default-mode (binder-read)))
+        filename-list)
     (save-excursion
       (goto-char (point-min))
       (while (re-search-forward "^>" nil t)
         (setq filename-list
               (cons (alist-get 'filename
-                               (binder-get-item (binder-sidebar-get-id)
-                                                alist))
+                               (binder-get-item (binder-sidebar-get-id)))
                     filename-list))))
     (setq filename-list (reverse filename-list))
     (with-current-buffer buffer
@@ -353,7 +378,7 @@ See `display-buffer-in-side-window' for example options."
 (define-key binder-sidebar-mode-map (kbd "n") #'next-line)
 (define-key binder-sidebar-mode-map (kbd "p") #'previous-line)
 (define-key binder-sidebar-mode-map (kbd "RET") #'binder-sidebar-find-file)
-(define-key binder-sidebar-mode-map (kbd "s") #'binder-write)
+(define-key binder-sidebar-mode-map (kbd "s") #'binder-sidebar-save)
 (define-key binder-sidebar-mode-map (kbd "m") #'binder-sidebar-mark)
 (define-key binder-sidebar-mode-map (kbd "u") #'binder-sidebar-unmark)
 (define-key binder-sidebar-mode-map (kbd "v") #'binder-sidebar-multiview)
@@ -420,12 +445,24 @@ See `display-buffer-in-side-window' for example options."
   (if (not (buffer-modified-p))
       (message "(No changes need to be added to binder)")
     (let ((notes-prop (assq 'notes (binder-get-item binder-notes-id)))
-          (notes (buffer-substring-no-properties (point-min) (point-max))))
+          (notes (string-trim
+                  (buffer-substring-no-properties (point-min) (point-max)))))
       (if notes-prop
           (setcdr notes-prop notes)
         (push (cons 'notes notes) (cdr (binder-get-item binder-notes-id)))))
     (set-buffer-modified-p nil)
     (message "Added notes for `%s' to binder" binder-notes-id)))
+
+(defun binder-notes-expand-window ()
+  (interactive)
+  (unless (derived-mode-p 'binder-notes-mode)
+    (user-error "Not in binder-notes-mode"))
+  (if (window-parameter (selected-window) 'window-side)
+      (progn
+        (quit-window)
+        (pop-to-buffer (get-buffer-create "*Binder Notes*") t))
+    (quit-window)
+    (binder-sidebar-open-notes)))
 
 ;;;###autoload
 (define-derived-mode binder-notes-mode
@@ -433,6 +470,7 @@ See `display-buffer-in-side-window' for example options."
   "Major mode for editing `binder' notes.")
 
 (define-key binder-notes-mode-map (kbd "C-c C-c") #'binder-notes-commit)
+(define-key binder-notes-mode-map (kbd "C-c C-l") #'binder-notes-expand-window)
 (define-key binder-notes-mode-map (kbd "C-c C-q") #'quit-window)
 
 (defcustom binder-notes-mode-hook
