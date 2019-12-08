@@ -142,11 +142,11 @@
 (defun binder-get-structure ()
   (alist-get 'structure (binder-read)))
 
-(defun binder-get-item (id)
-  (assoc-string id (binder-get-structure)))
+(defun binder-get-item (file)
+  (assoc-string file (binder-get-structure)))
 
-(defun binder-get-item-prop (id prop)
-  (alist-get prop (cdr (binder-get-item id))))
+(defun binder-get-file-prop (file prop)
+  (alist-get prop (cdr (binder-get-item file))))
 
 
 ;;; Global Minor Mode
@@ -157,18 +157,18 @@ Or goto Nth previous file if N is negative."
   (interactive "p")
   ;; FIXME: error on dired buffers
   (let ((this-file (or (buffer-file-name) default-directory))
-        (structure (binder-get-structure))
+        (struct (binder-get-structure))
         item index next-index next-file)
     (setq this-file (binder-file-relative-to-root this-file)
-          item (binder-get-item (binder-get-id-for-filename this-file)))
+          item (binder-get-item this-file))
     (if (not item)
         (user-error "Item `%s' not in a binder" this-file)
-      (setq index (seq-position structure item 'eq)
+      (setq index (seq-position struct item 'eq)
             next-index (+ index n))
       (if (and (<= 0 next-index)
-               (< next-index (length structure)))
+               (< next-index (length struct)))
           (and
-           (setq next-file (expand-file-name (car (nth next-index structure))
+           (setq next-file (expand-file-name (car (nth next-index struct))
                                              (binder-root)))
            (find-file-existing next-file))
         (message "End of binder"))
