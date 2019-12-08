@@ -84,12 +84,13 @@
 
 (defun binder-find-binder-file ()
   (let ((binder-file (expand-file-name binder-default-file (binder-root))))
-    (if (file-readable-p binder-file) binder-file)))
+    (if (file-readable-p binder-file)
+        binder-file
+      (user-error "No binder file found"))))
 
 (defun binder-read ()
   (let ((dir default-directory)
-        (binder-file (or (binder-find-binder-file)
-                         (user-error "No binder file found"))))
+        (binder-file (binder-find-binder-file)))
     (unless (and (string= dir (get 'binder-alist-cache 'dir))
                  (time-less-p (file-attribute-modification-time
                                (file-attributes binder-file))
