@@ -116,12 +116,22 @@
               (pp (binder-read)))
       (write-file binder-file))))
 
-(defun binder-get-id-for-file (filename)
-  (let (id)
-    (dolist (item (binder-get-structure))
-      (if (string= (alist-get 'filename item) filename)
-          (setq id (car item))))
-    id))
+(defun binder-get-file-tree (file)
+  (setq file (abbreviate-file-name (expand-file-name file)))
+  (when (file-exists-p file)
+    (let ((last-file (file-name-nondirectory file))
+          (root (binder-root))
+          tree)
+      (while (not (or (file-equal-p file root)
+                      (null file)
+                      (string-match locate-dominating-stop-dir-regexp file)))
+        (setq file (file-name-directory (directory-file-name file))
+              tree (list (file-name-nondirectory
+                          (directory-file-name file))
+                         tree)))
+      tree)))
+
+
 
 (defun binder-file-relative-to-root (filename)
   (let ((root (binder-root)))
