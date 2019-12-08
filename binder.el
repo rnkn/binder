@@ -183,19 +183,6 @@ Or goto Nth next file if N is negative."
   (interactive "p")
   (binder-next-file (- n)))
 
-(defun binder-toggle-sidebar ()
-  (interactive)
-  (let ((display-buffer-mark-dedicated t)
-        (dir default-directory)
-        (buffer (binder-sidebar-create)))
-    (if (get-buffer-window buffer (selected-frame))
-        (delete-windows-on buffer (selected-frame))
-      (display-buffer-in-side-window buffer binder-sidebar-display-alist)
-      (with-current-buffer buffer
-        (setq default-directory dir))
-      (if binder-sidebar-select-window
-          (select-window (get-buffer-window buffer (selected-frame)))))))
-
 (defvar binder-mode-map (make-sparse-keymap))
 
 (define-key binder-mode-map (kbd "C-c ]") #'binder-next-file)
@@ -288,6 +275,19 @@ See `display-buffer-in-side-window' for example options."
   (save-excursion
     (beginning-of-line)
     (get-text-property (point) 'binder-id)))
+
+(defun binder-toggle-sidebar ()
+  (interactive)
+  (let ((display-buffer-mark-dedicated t)
+        (dir default-directory)
+        (buffer (binder-sidebar-create)))
+    (if (get-buffer-window buffer (selected-frame))
+        (delete-windows-on buffer (selected-frame))
+      (display-buffer-in-side-window buffer binder-sidebar-display-alist)
+      (with-current-buffer buffer
+        (setq default-directory dir))
+      (if binder-sidebar-select-window
+          (select-window (get-buffer-window buffer (selected-frame)))))))
 
 (defun binder-sidebar-find-file ()
   (interactive)
