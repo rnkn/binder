@@ -75,6 +75,11 @@
   "Default face for missing items."
   :group 'binder-sidebar-faces)
 
+(defface binder-sidebar-status
+  '((t (:inherit (font-lock-variable-name-face))))
+  "Default face for status labels."
+  :group 'binder-sidebar-faces)
+
 (defface binder-sidebar-delete
   '((t (:inherit (error))))
   "Default face for items marked for removal."
@@ -138,6 +143,9 @@
   binder--cache)
 
 (defun binder-write ()
+  (mapc (lambda (item)
+          (rassq-delete-all "" item))
+        (binder-get-structure))
   (let ((binder-file (binder-find-binder-file)))
     (with-temp-buffer
       (insert binder-file-header (pp binder--cache))
@@ -158,6 +166,15 @@
 (defun binder-get-structure ()
   (alist-get 'structure (binder-read)))
 
+(defun binder-get-prop-list (prop)
+  (delq nil
+        (mapcar
+         (lambda (item)
+           (let ((value (alist-get prop item)))
+             (when (and (stringp value) (< 0 (string-width value)))
+               value)))
+         (binder-get-structure))))
+
 (defun binder-get-item (fileid)
   (assoc-string fileid (binder-get-structure)))
 
@@ -165,10 +182,13 @@
   (alist-get prop (cdr (binder-get-item fileid))))
 
 (defun binder-set-item-prop (fileid prop value)
-  (let ((prop-elt (assq prop (binder-get-item fileid))))
-    (if prop-elt
-        (setcdr prop-elt value)
-      (push (cons prop value) (cdr (binder-get-item fileid))))))
+  (let ((item (binder-get-item fileid)))
+    (if (string-empty-p value)
+        (assq-delete-all prop item)
+      (let ((prop-elt (assq prop item)))
+        (if prop-elt
+            (setcdr prop-elt value)
+          (push (cons prop value) (cdr item)))))))
 
 (defun binder-get-item-index (fileid)
   (seq-position (binder-get-structure) (binder-get-item fileid) 'eq))
@@ -270,7 +290,7 @@ Or goto Nth next file if N is negative."
       (binder-insert-item fileid index))
     (with-current-buffer (get-buffer-create binder-sidebar-buffer)
       (binder-sidebar-refresh)
-      (binder-write)
+      (binder-write-maybe)
       (binder-sidebar-goto-item fileid))
     (find-file filepath)))
 
@@ -348,6 +368,13 @@ See `display-buffer-in-side-window' for example options."
   :safe 'characterp
   :group 'binder-sidebar)
 
+(defcustom binder-sidebar-status-char
+  ?#
+  "Character to prefix to item status."
+  :type 'character
+  :safe 'characterp
+  :group 'binder-sidebar)
+
 (defcustom binder-sidebar-missing-char
   ??
   "Character to display on items with missing files."
@@ -382,7 +409,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
         (let ((fileid (car item))
               (display (alist-get 'display item))
               (notes (alist-get 'notes item))
-              (tags (alist-get 'tags item))
+              (status (alist-get 'status item))
               missing)
           (when (not (file-exists-p fileid))
             (setq missing t))
@@ -401,6 +428,14 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
           (when missing
             (put-text-property (line-beginning-position) (line-end-position)
                                'face 'binder-sidebar-missing))
+          (when (and status (< 0 (string-width status)))
+            (move-to-column binder-sidebar-status-column)
+            (indent-to-column binder-sidebar-status-column)
+            (let ((x (point)))
+              (delete-region (1- x) (line-end-position))
+              (insert " " binder-sidebar-status-char status)
+              (put-text-property x (line-end-position)
+                                 'face 'binder-sidebar-status)))
           (insert "\n")))
       (goto-char x))))
 
@@ -445,6 +480,11 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   (interactive)
   (binder-write))
 
+(defun binder-sidebar-get-index ()
+  (if (eobp)
+      (length (binder-get-structure))
+  (binder-get-item-index (binder-sidebar-get-fileid))))
+
 (defun binder-sidebar-mark ()
   (interactive)
   (beginning-of-line)
@@ -475,12 +515,34 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
     (while (not (eobp))
       (binder-sidebar-unmark))))
 
-(defun binder-sidebar-get-index ()
-  (if (eobp)
-      (length (binder-get-structure))
-  (binder-get-item-index (binder-sidebar-get-fileid))))
+(defun binder-sidebar-add-file (fileid)
+  (interactive "FAdd file: ")
+  (setq fileid (binder-file-relative-to-root fileid))
+  (binder-insert-item fileid (1+ (binder-sidebar-get-index)))
+  (binder-sidebar-refresh)
+  (binder-write-maybe))
 
-(defalias 'binder-sidebar-add 'binder-add)
+(defun binder-sidebar-new-file (fileid)
+  (interactive "sNew file (extension optional): ")
+  (unless (< 0 (string-width fileid))
+    (user-error "No file name supplied"))
+  (unless (or (directory-name-p fileid)
+              (and (string-match "\\.[^.]+\\'" fileid)
+	               (not (= 0 (match-beginning 0)))))
+    (setq fileid
+          (concat fileid "." (alist-get 'default-extension (binder-read)))))
+  (unless (binder-get-item fileid)
+    (binder-insert-item fileid (1+ (binder-sidebar-get-index))))
+  (unwind-protect
+      (let ((pop-up-windows binder-sidebar-pop-up-windows)
+            (filepath (expand-file-name fileid (binder-root))))
+        (if (directory-name-p filepath)
+            (make-directory filepath)
+        (find-file filepath)
+        (write-file filepath)))
+    (with-current-buffer (get-buffer-create binder-sidebar-buffer)
+      (binder-sidebar-refresh)
+      (binder-write-maybe))))
 
 (defun binder-sidebar-remove (arg)
   (interactive "P")
@@ -492,7 +554,8 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
         (binder-delete-item fileid)
       (when (y-or-n-p (format "Really remove item %S?" display))
         (binder-delete-item fileid)))
-    (binder-sidebar-refresh)))
+    (binder-sidebar-refresh)
+    (binder-write-maybe)))
 
 (defun binder-sidebar-rename ()
   (interactive)
@@ -502,7 +565,25 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
           (read-string "New name: "
                        (or (binder-get-item-prop fileid 'display) fileid)))
     (binder-set-item-prop fileid 'display name)
-    (binder-sidebar-refresh)))
+    (binder-sidebar-refresh)
+    (binder-write-maybe)))
+
+(defun binder-sidebar-relocate (filepath)
+  (interactive "fNew file path: ")
+  (setq filepath (binder-file-relative-to-root filepath))
+  (setcar (binder-get-item (binder-sidebar-get-fileid)) filepath)
+  (binder-sidebar-refresh)
+  (binder-write-maybe))
+
+(defun binder-sidebar-set-status (status)
+  (interactive
+   (list (completing-read-default
+          "Status: " (binder-get-prop-list 'status)
+          nil nil
+          (binder-get-item-prop (binder-sidebar-get-fileid) 'status))))
+  (binder-set-item-prop (binder-sidebar-get-fileid) 'status status)
+  (binder-sidebar-refresh)
+  (binder-write-maybe))
 
 (defun binder-sidebar-goto-item (fileid)
   (goto-char (point-min))
@@ -544,16 +625,18 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
 (define-key binder-sidebar-mode-map (kbd "s") #'binder-sidebar-save)
 (define-key binder-sidebar-mode-map (kbd "m") #'binder-sidebar-mark)
 (define-key binder-sidebar-mode-map (kbd "u") #'binder-sidebar-unmark)
+(define-key binder-sidebar-mode-map (kbd "#") #'binder-sidebar-set-status)
 (define-key binder-sidebar-mode-map (kbd "U") #'binder-sidebar-unmark-all)
 (define-key binder-sidebar-mode-map (kbd "v") #'binder-sidebar-join)
 (define-key binder-sidebar-mode-map (kbd "i") #'binder-sidebar-toggle-notes)
 (define-key binder-sidebar-mode-map (kbd "z") #'binder-sidebar-open-notes)
 (define-key binder-sidebar-mode-map (kbd "M-n") #'binder-sidebar-shift-down)
 (define-key binder-sidebar-mode-map (kbd "M-p") #'binder-sidebar-shift-up)
-(define-key binder-sidebar-mode-map (kbd "a") #'binder-sidebar-add)
+(define-key binder-sidebar-mode-map (kbd "a") #'binder-sidebar-add-file)
 (define-key binder-sidebar-mode-map (kbd "d") #'binder-sidebar-remove)
 (define-key binder-sidebar-mode-map (kbd "r") #'binder-sidebar-rename)
 (define-key binder-sidebar-mode-map (kbd "R") #'binder-sidebar-relocate)
+(define-key binder-sidebar-mode-map (kbd "M-RET") #'binder-sidebar-new-file)
 
 
 ;;; Notes Major Mode
