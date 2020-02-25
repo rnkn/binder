@@ -334,7 +334,15 @@ See `display-buffer-in-side-window' for example options."
                (seq-every-p 'consp value)))
   :group 'binder-sidebar)
 
-(defcustom binder-sidebar-pop-up-windows nil
+(defcustom binder-sidebar-hide-file-extensions
+  nil
+  "When non-nil, list items without file extension."
+  :type 'boolean
+  :safe 'booleanp
+  :group 'binder-sidebar)
+
+(defcustom binder-sidebar-pop-up-windows
+  nil
   "Non-nil means displaying a new buffer should make a new window."
   :type 'boolean
   :safe 'booleanp
@@ -420,7 +428,11 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
                          binder-sidebar-notes-char)
                         (t " "))
                   " "
-                  (or display fileid))
+                  (or display
+                      (if binder-sidebar-hide-file-extensions
+                          (replace-regexp-in-string ".+\\(\\..+\\)" ""
+                                                    fileid nil nil 1)
+                        fileid)))
           (put-text-property (line-beginning-position) (line-end-position)
                              'binder-fileid fileid)
           (put-text-property (line-beginning-position) (line-end-position)
@@ -585,6 +597,16 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
+(defun binder-sidebar-toggle-file-extensions ()
+  (interactive)
+  (customize-set-variable 'binder-sidebar-hide-file-extensions
+                          (not binder-sidebar-hide-file-extensions))
+  (binder-sidebar-refresh)
+  (message "%s file extensions"
+           (capitalize
+            (if binder-sidebar-hide-file-extensions
+                "hiding" "showing"))))
+
 (defun binder-sidebar-goto-item (fileid)
   (goto-char (point-min))
   (let (found)
@@ -633,9 +655,11 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
 (define-key binder-sidebar-mode-map (kbd "M-n") #'binder-sidebar-shift-down)
 (define-key binder-sidebar-mode-map (kbd "M-p") #'binder-sidebar-shift-up)
 (define-key binder-sidebar-mode-map (kbd "a") #'binder-sidebar-add-file)
+(define-key binder-sidebar-mode-map (kbd "A") #'binder-sidebar-add-all-files)
 (define-key binder-sidebar-mode-map (kbd "d") #'binder-sidebar-remove)
 (define-key binder-sidebar-mode-map (kbd "r") #'binder-sidebar-rename)
 (define-key binder-sidebar-mode-map (kbd "R") #'binder-sidebar-relocate)
+(define-key binder-sidebar-mode-map (kbd "E") #'binder-sidebar-toggle-file-extensions)
 (define-key binder-sidebar-mode-map (kbd "M-RET") #'binder-sidebar-new-file)
 
 
