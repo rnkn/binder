@@ -433,10 +433,12 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
                         (t " "))
                   " "
                   (or display
-                      (if binder-sidebar-hide-file-extensions
-                          (replace-regexp-in-string ".+\\(\\..+\\)" ""
-                                                    fileid nil nil 1)
-                        fileid)))
+                      (if (file-directory-p fileid)
+                          (replace-regexp-in-string "/*$" "/" fileid)
+                        (if binder-sidebar-hide-file-extensions
+                            (replace-regexp-in-string ".+\\(\\..+\\)" ""
+                                                      fileid nil nil 1)
+                          fileid))))
           (put-text-property (line-beginning-position) (line-end-position)
                              'binder-fileid fileid)
           (put-text-property (line-beginning-position) (line-end-position)
