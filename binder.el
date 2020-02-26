@@ -47,8 +47,8 @@
   :group 'binder)
 
 (defcustom binder-save-threshold
-  10
-  "Limit before binder file is automatically saved."
+  15
+  "Integer of changes before binder file is automatically saved."
   :type 'integer
   :safe 'integerp
   :group 'binder)
