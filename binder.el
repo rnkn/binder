@@ -143,6 +143,7 @@
   binder--cache)
 
 (defun binder-write ()
+  (interactive)
   (mapc (lambda (item)
           (rassq-delete-all "" item))
         (binder-get-structure))
@@ -488,9 +489,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   (interactive)
   (binder-sidebar-find-file t))
 
-(defun binder-sidebar-save ()
-  (interactive)
-  (binder-write))
+(defalias 'binder-sidebar-save 'binder-write)
 
 (defun binder-sidebar-get-index ()
   (if (eobp)
