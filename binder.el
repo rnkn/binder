@@ -149,7 +149,7 @@
         (binder-get-structure))
   (let ((binder-file (binder-find-binder-file)))
     (with-temp-buffer
-      (insert binder-file-header (pp binder--cache))
+      (insert binder-file-header (pp-to-string binder--cache))
       (write-file binder-file))))
 
 (defun binder-write-maybe ()
