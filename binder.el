@@ -618,7 +618,9 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   (interactive)
   (customize-set-variable 'binder-sidebar-hide-file-extensions
                           (not binder-sidebar-hide-file-extensions))
-  (binder-sidebar-refresh)
+  (let ((current-fileid (binder-sidebar-get-fileid)))
+    (binder-sidebar-refresh)
+    (binder-sidebar-goto-item current-fileid))
   (message "%s file extensions"
            (capitalize
             (if binder-sidebar-hide-file-extensions
