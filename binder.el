@@ -540,6 +540,12 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
+(defun binder-sidebar-add-all-files ()
+  (interactive)
+  (when (y-or-n-p (format "Add all files in %s" (abbreviate-file-name default-directory)))
+    (dolist (file (directory-files default-directory nil "^[^.]"))
+      (binder-sidebar-add-file file))))
+
 (defun binder-sidebar-new-file (fileid)
   (interactive "sNew file (extension optional): ")
   (unless (< 0 (string-width fileid))
