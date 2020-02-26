@@ -189,7 +189,8 @@
       (let ((prop-elt (assq prop item)))
         (if prop-elt
             (setcdr prop-elt value)
-          (push (cons prop value) (cdr item)))))))
+          (push (cons prop value) (cdr item))))))
+  (put 'binder--cache 'modification-time (current-time)))
 
 (defun binder-get-item-index (fileid)
   (seq-position (binder-get-structure) (binder-get-item fileid) 'eq))
@@ -200,11 +201,13 @@
     (setcdr (assq 'structure (binder-read))
             (nconc (seq-take structure index)
                    (cons item (seq-drop structure index)))))
+  (put 'binder--cache 'modification-time (current-time))
   (binder-write-maybe))
 
 (defun binder-delete-item (fileid)
   (setcdr (assq 'structure (binder-read))
           (delq (binder-get-item fileid) (binder-get-structure)))
+  (put 'binder--cache 'modification-time (current-time))
   (binder-write-maybe))
 
 ;; FIXME: unused for flat file structure
@@ -529,7 +532,9 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
 (defun binder-sidebar-add-file (fileid)
   (interactive "FAdd file: ")
   (setq fileid (binder-file-relative-to-root fileid))
-  (binder-insert-item fileid (1+ (binder-sidebar-get-index)))
+  (unless (binder-get-item fileid)
+    (binder-insert-item fileid (1+ (binder-sidebar-get-index))))
+  (put 'binder--cache 'modification-time (current-time))
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
@@ -552,6 +557,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
         (find-file filepath)
         (write-file filepath)))
     (with-current-buffer (get-buffer-create binder-sidebar-buffer)
+      (put 'binder--cache 'modification-time (current-time))
       (binder-sidebar-refresh)
       (binder-write-maybe))))
 
@@ -565,6 +571,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
         (binder-delete-item fileid)
       (when (y-or-n-p (format "Really remove item %S?" display))
         (binder-delete-item fileid)))
+    (put 'binder--cache 'modification-time (current-time))
     (binder-sidebar-refresh)
     (binder-write-maybe)))
 
@@ -576,6 +583,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
           (read-string "New name: "
                        (or (binder-get-item-prop fileid 'display) fileid)))
     (binder-set-item-prop fileid 'display name)
+    (put 'binder--cache 'modification-time (current-time))
     (binder-sidebar-refresh)
     (binder-write-maybe)))
 
@@ -583,6 +591,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   (interactive "fNew file path: ")
   (setq filepath (binder-file-relative-to-root filepath))
   (setcar (binder-get-item (binder-sidebar-get-fileid)) filepath)
+  (put 'binder--cache 'modification-time (current-time))
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
@@ -593,6 +602,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
           nil nil
           (binder-get-item-prop (binder-sidebar-get-fileid) 'status))))
   (binder-set-item-prop (binder-sidebar-get-fileid) 'status status)
+  (put 'binder--cache 'modification-time (current-time))
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
@@ -625,6 +635,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
           index (binder-get-item-index fileid))
     (binder-delete-item fileid)
     (binder-insert-item item (+ index p))
+    (put 'binder--cache 'modification-time (current-time))
     (binder-sidebar-refresh)
     (binder-sidebar-goto-item fileid)))
 
