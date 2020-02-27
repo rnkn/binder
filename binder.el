@@ -60,7 +60,7 @@
   "Default faces for `binder-sidebar-mode'."
   :group 'binder-sidebar)
 
-(defface binder-sidebar-mark
+(defface binder-sidebar-marked
   '((t (:inherit (warning))))
   "Default face marked items."
   :group 'binder-sidebar-faces)
@@ -102,7 +102,10 @@
   "Default binder lisp object.")
 
 (defvar binder--cache nil)
-(defvar binder--modified-count 0)
+(defvar binder--directory nil)
+(defvar binder--modification-time nil)
+(defvar binder--modification-count 0)
+(defvar binder--marked-fileids nil)
 
 
 ;;; Core Functions
@@ -422,12 +425,16 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
               (display (alist-get 'display item))
               (notes (alist-get 'notes item))
               (status (alist-get 'status item))
-              missing)
+              marked missing)
+          (when (member fileid binder--marked-fileids)
+            (setq marked t))
           (when (not (file-exists-p fileid))
             (setq missing t))
-          (insert " "
-                  (cond (missing
-                         binder-sidebar-missing-char)
+          (insert (cond (marked ">")
+                        (include binder-sidebar-include-char)
+                        (t " "))
+                  " "
+                  (cond (missing binder-sidebar-missing-char)
                         ((and notes (not (string-empty-p notes)))
                          binder-sidebar-notes-char)
                         (t " "))
@@ -446,6 +453,9 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
           (when missing
             (put-text-property (line-beginning-position) (line-end-position)
                                'face 'binder-sidebar-missing))
+          (when marked
+            (put-text-property (line-beginning-position) (line-end-position)
+                               'face 'binder-sidebar-marked))
           (when (and status (< 0 (string-width status)))
             (move-to-column binder-sidebar-status-column)
             (indent-to-column binder-sidebar-status-column)
@@ -503,33 +513,24 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
 
 (defun binder-sidebar-mark ()
   (interactive)
-  (beginning-of-line)
-  (with-silent-modifications
-    (delete-char 1)
-    (insert-and-inherit ">")
-    (put-text-property (line-beginning-position)
-                       (line-end-position)
-                       'face 'binder-sidebar-mark)
-    (forward-line 1)))
+  (cl-pushnew (binder-sidebar-get-fileid) binder--marked-fileids)
+  (forward-line 1)
+  (binder-sidebar-refresh))
 
 (defun binder-sidebar-unmark ()
   (interactive)
-  (beginning-of-line)
-  (with-silent-modifications
-    (delete-char 1)
-    (insert-and-inherit " ")
-    (put-text-property (line-beginning-position)
-                       (line-end-position)
-                       'face nil)
-    (forward-line 1)))
+  (setq binder--marked-fileids
+        (delete (binder-sidebar-get-fileid) binder--marked-fileids))
+  (forward-line 1)
+  (binder-sidebar-refresh))
 
 (defun binder-sidebar-unmark-all ()
   (interactive)
-  (save-excursion
-    (widen)
+  (let ((fileid (binder-sidebar-get-fileid)))
     (goto-char (point-min))
     (while (not (eobp))
-      (binder-sidebar-unmark))))
+      (binder-sidebar-unmark))
+    (binder-sidebar-goto-item fileid)))
 
 (defun binder-sidebar-add-file (fileid)
   (interactive "FAdd file: ")
