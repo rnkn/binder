@@ -95,12 +95,6 @@
 ;; probably shouldn't edit it.\n\n"
   "Header information for binder-file.")
 
-(defvar binder-file-scaffold
-  '((structure . nil)
-    (default-mode . text-mode)
-    (default-extension . "txt"))
-  "Default binder lisp object.")
-
 (defvar binder--cache nil)
 (defvar binder--directory nil)
 (defvar binder--modification-time nil)
@@ -120,7 +114,11 @@
       (let ((binder-file
              (expand-file-name binder-default-file default-directory)))
       (with-temp-buffer
-        (insert binder-file-header (pp binder-file-scaffold))
+        (insert binder-file-header
+                (pp-to-string
+                 (list (cons 'structure nil)
+                       (cons 'default-mode binder-default-multiview-mode)
+                       (cons 'default-extension binder-default-file-extention))))
         (write-file binder-file))
       binder-file))))
 
