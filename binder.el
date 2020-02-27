@@ -429,6 +429,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
       (erase-buffer)
       (dolist (item (binder-get-structure))
         (let ((fileid (car item))
+              (include (alist-get 'include item))
               (display (alist-get 'display item))
               (notes (alist-get 'notes item))
               (status (alist-get 'status item))
@@ -624,7 +625,19 @@ When ARG is non-nil, do not prompt for confirmation."
   (interactive "fNew file path: ")
   (setq filepath (binder-file-relative-to-root filepath))
   (setcar (binder-get-item (binder-sidebar-get-fileid)) filepath)
-  (put 'binder--cache 'modification-time (current-time))
+  (setq binder--modification-time (current-time))
+  (binder-sidebar-refresh)
+  (binder-write-maybe))
+
+(defun binder-sidebar-toggle-include ()
+  "Toggle whether binder item at point is included in multiview."
+  (interactive)
+  (let ((fileid (binder-sidebar-get-fileid))
+        include)
+    (setq include (not (binder-get-item-prop fileid 'include)))
+    (binder-set-item-prop (binder-sidebar-get-fileid) 'include include))
+  ;; (forward-line 1)
+  (setq binder--modification-time (current-time))
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
