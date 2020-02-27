@@ -206,7 +206,8 @@ Reads from `binder--cache' if valid, or from binder file if not."
   (setq binder--modification-time (current-time)))
 
 (defun binder-get-item-index (fileid)
-  (seq-position (binder-get-structure) (binder-get-item fileid) 'eq))
+  "Return index position for binder item for FILEID."
+  (seq-position (binder-get-structure) (binder-get-item fileid)))
 
 (defun binder-insert-item (item index)
   "Insert binder ITEM at position INDEX."
