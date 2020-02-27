@@ -115,7 +115,6 @@
 (defvar binder--directory nil)
 (defvar binder--modification-time nil)
 (defvar binder--modification-count 0)
-(defvar binder--marked-fileids nil)
 
 
 ;;; Core Functions
@@ -438,6 +437,9 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   :safe 'booleanp
   :group 'binder-sidebar)
 
+(defvar binder--sidebar-marked nil)
+(defvar binder--sidebar-narrowing-status nil)
+
 (defun binder-sidebar-refresh ()
   "Redraw binder sidebar, reading from cache."
   (interactive)
@@ -451,45 +453,47 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
               (notes (alist-get 'notes item))
               (status (alist-get 'status item))
               marked missing)
-          (when (member fileid binder--marked-fileids)
-            (setq marked t))
-          (when (not (file-exists-p fileid))
-            (setq missing t))
-          (insert (cond (marked ">")
-                        (include binder-sidebar-include-char)
-                        (t " "))
-                  " "
-                  (cond (missing binder-sidebar-missing-char)
-                        ((and notes (not (string-empty-p notes)))
-                         binder-sidebar-notes-char)
-                        (t " "))
-                  " "
-                  (or display
-                      (if (file-directory-p fileid)
-                          (replace-regexp-in-string "/*$" "/" fileid)
-                        (if binder-sidebar-hide-file-extensions
-                            (replace-regexp-in-string ".+\\(\\..+\\)" ""
-                                                      fileid nil nil 1)
-                          fileid))))
-          (put-text-property (line-beginning-position) (line-end-position)
-                             'binder-fileid fileid)
-          (put-text-property (line-beginning-position) (line-end-position)
-                             'front-sticky '(binder-fileid))
-          (when missing
+          (when (or (null binder--sidebar-narrowing-status)
+                    (string= status binder--sidebar-narrowing-status))
+            (when (member fileid binder--sidebar-marked)
+              (setq marked t))
+            (when (not (file-exists-p fileid))
+              (setq missing t))
+            (insert (cond (marked ">")
+                          (include binder-sidebar-include-char)
+                          (t " "))
+                    " "
+                    (cond (missing binder-sidebar-missing-char)
+                          ((and notes (not (string-empty-p notes)))
+                           binder-sidebar-notes-char)
+                          (t " "))
+                    " "
+                    (or display
+                        (if (file-directory-p fileid)
+                            (replace-regexp-in-string "/*$" "/" fileid)
+                          (if binder-sidebar-hide-file-extensions
+                              (replace-regexp-in-string ".+\\(\\..+\\)" ""
+                                                        fileid nil nil 1)
+                            fileid))))
             (put-text-property (line-beginning-position) (line-end-position)
-                               'face 'binder-sidebar-missing))
-          (when marked
+                               'binder-fileid fileid)
             (put-text-property (line-beginning-position) (line-end-position)
-                               'face 'binder-sidebar-marked))
-          (when (and status (< 0 (string-width status)))
-            (move-to-column binder-sidebar-status-column)
-            (indent-to-column binder-sidebar-status-column)
-            (let ((x (point)))
-              (delete-region x (line-end-position))
-              (insert binder-sidebar-status-char status)
-              (put-text-property x (line-end-position)
-                                 'face 'binder-sidebar-status)))
-          (insert "\n")))
+                               'front-sticky '(binder-fileid))
+            (when missing
+              (put-text-property (line-beginning-position) (line-end-position)
+                                 'face 'binder-sidebar-missing))
+            (when marked
+              (put-text-property (line-beginning-position) (line-end-position)
+                                 'face 'binder-sidebar-marked))
+            (when (and status (< 0 (string-width status)))
+              (move-to-column binder-sidebar-status-column)
+              (indent-to-column binder-sidebar-status-column)
+              (let ((x (point)))
+                (delete-region x (line-end-position))
+                (insert binder-sidebar-status-char status)
+                (put-text-property x (line-end-position)
+                                   'face 'binder-sidebar-status)))
+          (insert "\n"))))
       (goto-char x))))
 
 (defun binder-sidebar-get-fileid ()
@@ -546,15 +550,15 @@ When ARG is non-nil, visit in new window."
 (defun binder-sidebar-mark ()
   "Mark the binder item at point."
   (interactive)
-  (cl-pushnew (binder-sidebar-get-fileid) binder--marked-fileids)
+  (cl-pushnew (binder-sidebar-get-fileid) binder--sidebar-marked)
   (forward-line 1)
   (binder-sidebar-refresh))
 
 (defun binder-sidebar-unmark ()
   "Unmark the binder item at point."
   (interactive)
-  (setq binder--marked-fileids
-        (delete (binder-sidebar-get-fileid) binder--marked-fileids))
+  (setq binder--sidebar-marked
+        (delete (binder-sidebar-get-fileid) binder--sidebar-marked))
   (forward-line 1)
   (binder-sidebar-refresh))
 
@@ -712,6 +716,14 @@ When ARG is non-nil, do not prompt for confirmation."
   (interactive "p")
   (binder-sidebar-shift-down (- n)))
 
+(defun binder-sidebar-narrow-to-status (status)
+  (interactive
+   (list (completing-read-default
+          "Narrow to status: " (binder-get-prop-list 'status))))
+  (setq binder--sidebar-narrowing-status
+        (if (string-empty-p status) nil status))
+  (binder-sidebar-refresh))
+
 ;;;###autoload
 (define-derived-mode binder-sidebar-mode
   special-mode "Binder Sidebar"
@@ -740,6 +752,7 @@ When ARG is non-nil, do not prompt for confirmation."
 (define-key binder-sidebar-mode-map (kbd "R") #'binder-sidebar-relocate)
 (define-key binder-sidebar-mode-map (kbd "E") #'binder-sidebar-toggle-file-extensions)
 (define-key binder-sidebar-mode-map (kbd "x") #'binder-sidebar-toggle-include)
+(define-key binder-sidebar-mode-map (kbd "/") #'binder-sidebar-narrow-to-status)
 (define-key binder-sidebar-mode-map (kbd "M-RET") #'binder-sidebar-new-file)
 
 
