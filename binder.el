@@ -105,9 +105,11 @@
 ;;; Core Functions
 
 (defun binder-root ()
+  "Find the root directory with a binder file."
   (locate-dominating-file default-directory binder-default-file))
 
 (defun binder-init-binder-file ()
+  "Initialize a binder file."
   (unless (binder-root)
     (when (y-or-n-p (format "Create %s in %s? " binder-default-file
                             (abbreviate-file-name default-directory)))
@@ -123,12 +125,15 @@
       binder-file))))
 
 (defun binder-find-binder-file ()
+  "Find current binder file."
   (let ((binder-file (expand-file-name binder-default-file (binder-root))))
     (if (file-readable-p binder-file)
         binder-file
       (binder-init-binder-file))))
 
 (defun binder-read ()
+  "Read current binder data.
+Reads from `binder--cache' if valid, or from binder file if not."
   (let ((binder-file (binder-find-binder-file)))
     (unless binder-file
       (user-error "No binder file found"))
@@ -144,6 +149,7 @@
   binder--cache)
 
 (defun binder-write ()
+  "Write binder data to file."
   (interactive)
   (mapc (lambda (item)
           (rassq-delete-all "" item))
@@ -160,15 +166,18 @@
     (setq binder--modified-count 0)))
 
 (defun binder-file-relative-to-root (fileid)
+  "Return FILEID relative to binder root directory."
   (let ((root (binder-root)))
     (when root
       (string-trim (expand-file-name fileid)
                    (expand-file-name root)))))
 
 (defun binder-get-structure ()
+  "Return binder data structure component."
   (alist-get 'structure (binder-read)))
 
 (defun binder-get-prop-list (prop)
+  "Return list of values for PROP."
   (delq nil
         (mapcar
          (lambda (item)
@@ -178,12 +187,15 @@
          (binder-get-structure))))
 
 (defun binder-get-item (fileid)
+  "Return binder item association list for FILEID."
   (assoc-string fileid (binder-get-structure)))
 
 (defun binder-get-item-prop (fileid prop)
+  "Return value of PROP for binder item for FILEID."
   (alist-get prop (cdr (binder-get-item fileid))))
 
 (defun binder-set-item-prop (fileid prop value)
+  "Set VALUE of PROP for binder item for FILEID."
   (let ((item (binder-get-item fileid)))
     (if (string-empty-p value)
         (assq-delete-all prop item)
@@ -197,6 +209,7 @@
   (seq-position (binder-get-structure) (binder-get-item fileid) 'eq))
 
 (defun binder-insert-item (item index)
+  "Insert binder ITEM at position INDEX."
   (let ((structure (binder-get-structure)))
     (unless (listp item) (setq item (list item)))
     (setcdr (assq 'structure (binder-read))
@@ -206,6 +219,7 @@
   (binder-write-maybe))
 
 (defun binder-delete-item (fileid)
+  "Delete binder item for FILEID."
   (setcdr (assq 'structure (binder-read))
           (delq (binder-get-item fileid) (binder-get-structure)))
   (put 'binder--cache 'modification-time (current-time))
@@ -258,8 +272,8 @@ Or goto Nth previous file if N is negative."
           (when (consp map) (set-transient-map (cdr map) t)))))))
 
 (defun binder-previous (&optional n)
-  "Goto Nth previous file in binder.
-Or goto Nth next file if N is negative."
+  "Visit Nth previous file in binder.
+Or visit Nth next file if N is negative."
   (interactive "p")
   (binder-next (- n)))
 
@@ -360,13 +374,6 @@ See `display-buffer-in-side-window' for example options."
   :safe 'integerp
   :group 'binder-sidebar)
 
-(defcustom binder-sidebar-dir-char
-  ?+
-  "Character to display on direcotry."
-  :type 'character
-  :safe 'characterp
-  :group 'binder-sidebar)
-
 (defcustom binder-sidebar-include-char
   ?x
   "Character to display on items including in joining."
@@ -414,6 +421,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   :group 'binder-sidebar)
 
 (defun binder-sidebar-refresh ()
+  "Redraw binder sidebar, reading from cache."
   (interactive)
   (with-silent-modifications
     (let ((x (point)))
@@ -466,17 +474,20 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
       (goto-char x))))
 
 (defun binder-sidebar-get-fileid ()
+  "Return fileid for item at point."
   (save-excursion
     (beginning-of-line)
     (get-text-property (point) 'binder-fileid)))
 
-(defun binder-sidebar-create (dir)
+(defun binder-sidebar-create (dir)      ; FIXME: this does not create a buffer
+  "Create binder sidebar buffer for DIR."
   (setq default-directory dir)
   (binder-sidebar-refresh)
   (binder-sidebar-mode))
 
 ;;;###autoload
 (defun binder-toggle-sidebar ()
+  "Toggle visibility of binder sidebar side-window."
   (interactive)
   (let ((display-buffer-mark-dedicated t)
         (dir default-directory))
@@ -494,28 +505,34 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
          (get-buffer-window binder-sidebar-buffer (selected-frame)))))))
 
 (defun binder-sidebar-find-file (arg)
+  "Visit binder item at point.
+When ARG is non-nil, visit in new window."
   (interactive "P")
   (let ((pop-up-windows (or arg binder-sidebar-pop-up-windows)))
     (find-file (binder-sidebar-get-fileid))))
 
 (defun binder-sidebar-find-file-other-window ()
+  "Visit binder item in other window."
   (interactive)
   (binder-sidebar-find-file t))
 
 (defalias 'binder-sidebar-save 'binder-write)
 
 (defun binder-sidebar-get-index ()
+  "Return binder index position at point."
   (if (eobp)
       (length (binder-get-structure))
-  (binder-get-item-index (binder-sidebar-get-fileid))))
+    (binder-get-item-index (binder-sidebar-get-fileid))))
 
 (defun binder-sidebar-mark ()
+  "Mark the binder item at point."
   (interactive)
   (cl-pushnew (binder-sidebar-get-fileid) binder--marked-fileids)
   (forward-line 1)
   (binder-sidebar-refresh))
 
 (defun binder-sidebar-unmark ()
+  "Unmark the binder item at point."
   (interactive)
   (setq binder--marked-fileids
         (delete (binder-sidebar-get-fileid) binder--marked-fileids))
@@ -523,6 +540,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   (binder-sidebar-refresh))
 
 (defun binder-sidebar-unmark-all ()
+  "Unmark all binder items."
   (interactive)
   (let ((fileid (binder-sidebar-get-fileid)))
     (goto-char (point-min))
@@ -531,6 +549,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
     (binder-sidebar-goto-item fileid)))
 
 (defun binder-sidebar-add-file (fileid)
+  "Add (possibly non-existent) file to binder as FILEID."
   (interactive "FAdd file: ")
   (setq fileid (binder-file-relative-to-root fileid))
   (unless (binder-get-item fileid)
@@ -540,12 +559,14 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   (binder-write-maybe))
 
 (defun binder-sidebar-add-all-files ()
+  "Add all files in current directory to binder."
   (interactive)
   (when (y-or-n-p (format "Add all files in %s" (abbreviate-file-name default-directory)))
     (dolist (file (directory-files default-directory nil "^[^.]"))
       (binder-sidebar-add-file file))))
 
 (defun binder-sidebar-new-file (fileid)
+  "Add a new file to binder as FILEID and visit it."
   (interactive "sNew file (extension optional): ")
   (unless (< 0 (string-width fileid))
     (user-error "No file name supplied"))
@@ -569,6 +590,8 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
       (binder-write-maybe))))
 
 (defun binder-sidebar-remove (arg)
+  "Remove binder item at point.
+When ARG is non-nil, do not prompt for confirmation."
   (interactive "P")
   (let ((fileid (binder-sidebar-get-fileid))
         display)
@@ -583,6 +606,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
     (binder-write-maybe)))
 
 (defun binder-sidebar-rename ()
+  "Change display name of binder item at point."
   (interactive)
   (let ((fileid (binder-sidebar-get-fileid))
         name)
@@ -595,6 +619,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
     (binder-write-maybe)))
 
 (defun binder-sidebar-relocate (filepath)
+  "Change file path of binder item at point to FILEPATH."
   (interactive "fNew file path: ")
   (setq filepath (binder-file-relative-to-root filepath))
   (setcar (binder-get-item (binder-sidebar-get-fileid)) filepath)
@@ -603,6 +628,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   (binder-write-maybe))
 
 (defun binder-sidebar-set-status (status)
+  "Set the status of binder item at point to STATUS."
   (interactive
    (list (completing-read-default
           "Status: " (binder-get-prop-list 'status)
@@ -614,6 +640,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   (binder-write-maybe))
 
 (defun binder-sidebar-toggle-file-extensions ()
+  "Toggle visibility of binder item file extensions."
   (interactive)
   (customize-set-variable 'binder-sidebar-hide-file-extensions
                           (not binder-sidebar-hide-file-extensions))
@@ -626,6 +653,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
                 "hiding" "showing"))))
 
 (defun binder-sidebar-goto-item (fileid)
+  "Move point to binder item with FILEID."
   (goto-char (point-min))
   (let (found)
     (while (and (< (point) (point-max))
@@ -635,8 +663,8 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
         (forward-line 1)))))
 
 (defun binder-sidebar-shift-down (&optional n)
+  "Shift index position of binder item at point down in list."
   (interactive "p")
-  (unless n (setq n 1))
   (let ((p (if (<= n 0) -1 1))
         (fileid (binder-sidebar-get-fileid))
         item index)
@@ -649,8 +677,8 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
     (binder-sidebar-goto-item fileid)))
 
 (defun binder-sidebar-shift-up (&optional n)
+  "Shift index position of binder item at point up in list."
   (interactive "p")
-  (unless n (setq n 1))
   (binder-sidebar-shift-down (- n)))
 
 ;;;###autoload
@@ -687,7 +715,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
 (defcustom binder-notes-display-alist
   '((side . left)
     (slot . 1))
-  "Alist used to display binder notes buffer.
+  "Association list used to display binder notes buffer.
 
 See `display-buffer-in-side-window' for example options."
   :type 'alist
