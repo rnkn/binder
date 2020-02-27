@@ -698,7 +698,8 @@ When ARG is non-nil, do not prompt for confirmation."
 ;;;###autoload
 (define-derived-mode binder-sidebar-mode
   special-mode "Binder Sidebar"
-  "Major mode for working with `binder' projects.")
+  "Major mode for working with `binder' projects."
+  (add-hook 'post-command-hook 'binder-notes-refresh-maybe t t))
 
 (define-key binder-sidebar-mode-map (kbd "g") #'binder-sidebar-refresh)
 (define-key binder-sidebar-mode-map (kbd "n") #'next-line)
@@ -721,19 +722,11 @@ When ARG is non-nil, do not prompt for confirmation."
 (define-key binder-sidebar-mode-map (kbd "r") #'binder-sidebar-rename)
 (define-key binder-sidebar-mode-map (kbd "R") #'binder-sidebar-relocate)
 (define-key binder-sidebar-mode-map (kbd "E") #'binder-sidebar-toggle-file-extensions)
+(define-key binder-sidebar-mode-map (kbd "x") #'binder-sidebar-toggle-include)
 (define-key binder-sidebar-mode-map (kbd "M-RET") #'binder-sidebar-new-file)
 
 
 ;;; Notes Major Mode
-
-(defcustom binder-notes-display-alist
-  '((side . left)
-    (slot . 1))
-  "Association list used to display binder notes buffer.
-
-See `display-buffer-in-side-window' for example options."
-  :type 'alist
-  :group 'binder-sidebar)
 
 (defcustom binder-notes-buffer
   "*Binder Notes*"
@@ -742,43 +735,65 @@ See `display-buffer-in-side-window' for example options."
   :safe 'stringp
   :group 'binder-sidebar)
 
-(defvar-local binder-notes--fileid nil)
-(defvar-local binder-notes--display nil)
+(defcustom binder-notes-display-alist
+  '((side . left)
+    (window-width . 40)
+    (slot . 1))
+  "Association list used to display binder notes buffer.
 
-(defun binder-sidebar-get-notes (dir fileid)
-  (binder-notes-mode)
-  (when dir (setq default-directory dir))
-  (when fileid
-    (unless (string= binder-notes--fileid fileid)
-      (setq binder-notes--fileid fileid)
-      (setq binder-notes--display (alist-get 'display (binder-get-item binder-notes--fileid)))
-      (let ((notes (alist-get 'notes (binder-get-item binder-notes--fileid))))
-        (with-silent-modifications
-          (erase-buffer)
-          (when notes (insert notes)))))))
+See `display-buffer-in-side-window' for example options."
+  :type 'alist
+  :group 'binder-sidebar)
 
-(defun binder-sidebar-toggle-notes ()
+(defcustom binder-notes-keep-in-sync
+  t
+  "If non-nil, moving point in binder sidebar updates notes."
+  :type 'boolean
+  :safe 'booleanp
+  :group 'binder-sidebar)
+
+(defvar binder--notes-fileid nil)
+(defvar binder--notes-display nil)
+(defvar binder-notes-header-line-format
+  "C-c C-c to commit changes; C-c C-q to quit")
+
+(defun binder-notes-init-buffer (fileid)
+  (with-current-buffer (get-buffer-create binder-notes-buffer)
+    (binder-notes-mode)
+    (unless (string= binder--notes-fileid fileid)
+      (setq binder--notes-fileid fileid)
+      (setq binder--notes-display
+            (alist-get 'display (binder-get-item binder--notes-fileid))))
+    (setq header-line-format binder-notes-header-line-format)
+    (current-buffer)))
+
+(defun binder-sidebar-get-notes ()
+  (unless (derived-mode-p 'binder-notes-mode)
+    (user-error "Not in %S" 'binder-notes-mode))
+  (with-silent-modifications
+    (erase-buffer)
+    (insert (or (alist-get 'notes (binder-get-item binder--notes-fileid))
+                ""))))
+
+(defun binder-sidebar-toggle-notes (&optional force)
   (interactive)
   (let ((display-buffer-mark-dedicated t)
-        (dir default-directory)
-        (fileid (binder-sidebar-get-fileid))
-        (buffer (get-buffer-create binder-notes-buffer)))
-    (with-current-buffer buffer
-      (binder-sidebar-get-notes dir fileid))
-    (if (get-buffer-window buffer (selected-frame))
-        (delete-windows-on buffer (selected-frame))
-      (display-buffer-in-side-window buffer binder-notes-display-alist))))
+        (fileid (binder-sidebar-get-fileid)))
+    (with-current-buffer (binder-notes-init-buffer fileid)
+      (binder-sidebar-get-notes)
+      (if (get-buffer-window)
+          (if force
+              (select-window (get-buffer-window))
+            (delete-windows-on))
+        (display-buffer-in-side-window (current-buffer)
+         (append binder-notes-display-alist
+                 (when binder-sidebar-persistent
+                   (list '(window-parameters (no-delete-other-windows . t))))))))))
 
 (defun binder-sidebar-open-notes ()
   (interactive)
-  (let ((display-buffer-mark-dedicated t)
-        (dir default-directory)
-        (fileid (binder-sidebar-get-fileid))
-        (buffer (get-buffer-create binder-notes-buffer)))
-    (with-current-buffer buffer
-      (binder-sidebar-get-notes dir fileid)
-    (display-buffer-in-side-window buffer binder-notes-display-alist)
-    (select-window (get-buffer-window buffer (selected-frame))))))
+  (binder-sidebar-toggle-notes t)
+  (select-window (get-buffer-window binder-notes-buffer (selected-frame))))
 
 (defun binder-notes-commit ()
   (interactive)
@@ -787,18 +802,19 @@ See `display-buffer-in-side-window' for example options."
   (if (not (buffer-modified-p))
       (message "(No changes need to be added to binder)")
     (let ((prop-elt
-           (assq 'notes (binder-get-item binder-notes--fileid)))
+           (assq 'notes (binder-get-item binder--notes-fileid)))
           (notes
            (string-trim (buffer-substring-no-properties
                          (point-min) (point-max)))))
       (if prop-elt
           (setcdr prop-elt notes)
-        (push (cons 'notes notes) (cdr (binder-get-item binder-notes--fileid)))))
+        (push (cons 'notes notes) (cdr (binder-get-item binder--notes-fileid)))))
     (with-current-buffer binder-sidebar-buffer
+      (binder-write)
       (binder-sidebar-refresh))
     (set-buffer-modified-p nil)
     (message "Added notes for %S to binder"
-             (or binder-notes--display binder-notes--fileid))))
+             (or binder--notes-display binder--notes-fileid))))
 
 (defun binder-notes-expand-window ()
   (interactive)
@@ -810,6 +826,16 @@ See `display-buffer-in-side-window' for example options."
         (pop-to-buffer (get-buffer-create binder-notes-buffer) t))
     (quit-window)
     (binder-sidebar-open-notes)))
+
+(defun binder-notes-refresh-maybe ()
+  (while-no-input
+    (redisplay)
+    (when (and binder-notes-keep-in-sync
+               (get-buffer-window binder-notes-buffer (selected-frame)))
+      (let ((fileid (binder-sidebar-get-fileid)))
+        (with-current-buffer binder-notes-buffer
+          (binder-notes-init-buffer fileid)
+          (binder-sidebar-get-notes))))))
 
 (defcustom binder-notes-mode-hook
   '(visual-line-mode)
