@@ -34,14 +34,30 @@
 
 ;;; Options
 
-(defcustom binder-mode-lighter " B/"
+(defcustom binder-mode-lighter
+  " B/"
   "Mode-line indicator for `binder-mode'."
   :type '(choice (const :tag "No lighter" "") string)
   :safe 'stringp
   :group 'binder)
 
-(defcustom binder-default-file ".binder.el"
+(defcustom binder-default-file
+  ".binder.el"
   "Default file in which to store Binder project data."
+  :type 'string
+  :safe 'stringp
+  :group 'binder)
+
+(defcustom binder-default-multiview-mode
+  'text-mode
+  "Default major mode when concatenating multiple files"
+  :type 'function
+  :safe 'functionp
+  :group 'binder)
+
+(defcustom binder-default-file-extention
+  "txt"
+  "Default extension for new binder files."
   :type 'string
   :safe 'stringp
   :group 'binder)
@@ -227,18 +243,19 @@ Reads from `binder--cache' if valid, or from binder file if not."
   (binder-write-maybe))
 
 ;; FIXME: unused for flat file structure
-(defun binder-get-file-tree (file)
-  (setq file (abbreviate-file-name (expand-file-name file)))
-  (when (file-exists-p file)
-    (let ((last-file (file-name-nondirectory file))
+(defun binder-get-file-tree (fileid)
+  "Return tree structure for FILEID."
+  (setq fileid (abbreviate-file-name (expand-file-name fileid)))
+  (when (file-exists-p fileid)
+    (let ((last-file (file-name-nondirectory fileid))
           (root (binder-root))
           tree)
-      (while (not (or (file-equal-p file root)
-                      (null file)
-                      (string-match locate-dominating-stop-dir-regexp file)))
-        (setq file (file-name-directory (directory-file-name file))
+      (while (not (or (file-equal-p fileid root)
+                      (null fileid)
+                      (string-match locate-dominating-stop-dir-regexp fileid)))
+        (setq fileid (file-name-directory (directory-file-name fileid))
               tree (list (file-name-nondirectory
-                          (directory-file-name file))
+                          (directory-file-name fileid))
                          tree)))
       tree)))
 
@@ -246,25 +263,25 @@ Reads from `binder--cache' if valid, or from binder file if not."
 ;;; Global Minor Mode
 
 (defun binder-next (&optional n)
-  "Goto Nth next file in binder.
-Or goto Nth previous file if N is negative."
+  "Visit Nth next file in binder.
+Or visit Nth previous file if N is negative."
   (interactive "p")
-  ;; FIXME: error on dired buffers
-  (let ((this-file (or (buffer-file-name) default-directory))
+  (let ((this-fileid
+         (binder-file-relative-to-root
+          (or (buffer-file-name) default-directory)))
         (struct (binder-get-structure))
-        item index next-index next-file)
-    (setq this-file (binder-file-relative-to-root this-file)
-          item (binder-get-item this-file))
+        item index next-index next-fileid)
+    (setq item (binder-get-item this-fileid))
     (if (not item)
-        (user-error "%S not in a binder" this-file)
-      (setq index (seq-position struct item 'eq)
+        (user-error "%S not in a binder" this-fileid)
+      (setq index (seq-position struct item)
             next-index (+ index n))
       (if (and (<= 0 next-index)
                (< next-index (length struct)))
           (and
-           (setq next-file (expand-file-name (car (nth next-index struct))
-                                             (binder-root)))
-           (find-file-existing next-file))
+           (setq next-fileid (expand-file-name (car (nth next-index struct))
+                                               (binder-root)))
+           (find-file-existing next-fileid))
         (message "End of binder"))
       (unless overriding-terminal-local-map
         (let ((keys (substring (this-single-command-keys) 0 -1))
@@ -872,23 +889,21 @@ See `display-buffer-in-side-window' for example options."
 
 (defun binder-sidebar-join ()
   (interactive)
-  (let ((buffer (get-buffer-create "*Binder Multiview*"))
-        (mode (alist-get 'default-mode (binder-read)))
+  (let ((default-mode (alist-get 'default-mode (binder-read)))
         file-list)
     (save-excursion
       (goto-char (point-min))
       (while (re-search-forward "^>" nil t)
         (push (binder-sidebar-get-fileid) file-list)))
     (setq file-list (reverse file-list))
-    (with-current-buffer buffer
+    (with-current-buffer (get-buffer-create binder-join-buffer)
       (with-silent-modifications
         (erase-buffer)
-        (setq major-mode mode)
         (dolist (file file-list)
           (insert-file-contents file)
           (goto-char (point-max))
-          (insert binder-file-separator))))
-    (pop-to-buffer buffer)))
+          (insert binder-join-separator)))
+      (pop-to-buffer (current-buffer) t))))
 
 (define-minor-mode binder-join-mode
   "Minor mode for viewing Binder joined files."
