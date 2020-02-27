@@ -137,16 +137,15 @@ Reads from `binder--cache' if valid, or from binder file if not."
   (let ((binder-file (binder-find-binder-file)))
     (unless binder-file
       (user-error "No binder file found"))
-    (unless (and (string= default-directory (get 'binder--cache 'directory))
+    (unless (and (string= default-directory binder--directory)
                  (time-less-p (file-attribute-modification-time
                                (file-attributes binder-file))
-                              (get 'binder--cache 'modification-time)))
+                              binder--modification-time))
       (with-temp-buffer
         (insert-file-contents binder-file)
         (setq binder--cache (read (current-buffer)))))
-    (put 'binder--cache 'directory default-directory)
-    (put 'binder--cache 'modification-time (current-time)))
-  binder--cache)
+    (setq binder--directory default-directory)
+  binder--cache))
 
 (defun binder-write ()
   "Write binder data to file."
@@ -160,10 +159,11 @@ Reads from `binder--cache' if valid, or from binder file if not."
       (write-file binder-file))))
 
 (defun binder-write-maybe ()
-  (if (< binder--modified-count binder-save-threshold)
-      (cl-incf binder--modified-count)
+  "Write binder data if passed modified threshold."
+  (if (< binder--modification-count binder-save-threshold)
+      (cl-incf binder--modification-count)
     (binder-write)
-    (setq binder--modified-count 0)))
+    (setq binder--modification-count 0)))
 
 (defun binder-file-relative-to-root (fileid)
   "Return FILEID relative to binder root directory."
@@ -203,7 +203,7 @@ Reads from `binder--cache' if valid, or from binder file if not."
         (if prop-elt
             (setcdr prop-elt value)
           (push (cons prop value) (cdr item))))))
-  (put 'binder--cache 'modification-time (current-time)))
+  (setq binder--modification-time (current-time)))
 
 (defun binder-get-item-index (fileid)
   (seq-position (binder-get-structure) (binder-get-item fileid) 'eq))
@@ -215,14 +215,14 @@ Reads from `binder--cache' if valid, or from binder file if not."
     (setcdr (assq 'structure (binder-read))
             (nconc (seq-take structure index)
                    (cons item (seq-drop structure index)))))
-  (put 'binder--cache 'modification-time (current-time))
+  (setq binder--modification-time (current-time))
   (binder-write-maybe))
 
 (defun binder-delete-item (fileid)
   "Delete binder item for FILEID."
   (setcdr (assq 'structure (binder-read))
           (delq (binder-get-item fileid) (binder-get-structure)))
-  (put 'binder--cache 'modification-time (current-time))
+  (setq binder--modification-time (current-time))
   (binder-write-maybe))
 
 ;; FIXME: unused for flat file structure
@@ -554,7 +554,7 @@ When ARG is non-nil, visit in new window."
   (setq fileid (binder-file-relative-to-root fileid))
   (unless (binder-get-item fileid)
     (binder-insert-item fileid (1+ (binder-sidebar-get-index))))
-  (put 'binder--cache 'modification-time (current-time))
+  (setq binder--modification-time (current-time))
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
@@ -585,7 +585,7 @@ When ARG is non-nil, visit in new window."
         (find-file filepath)
         (write-file filepath)))
     (with-current-buffer (get-buffer-create binder-sidebar-buffer)
-      (put 'binder--cache 'modification-time (current-time))
+      (setq binder--modification-time (current-time))
       (binder-sidebar-refresh)
       (binder-write-maybe))))
 
@@ -601,7 +601,7 @@ When ARG is non-nil, do not prompt for confirmation."
         (binder-delete-item fileid)
       (when (y-or-n-p (format "Really remove item %S?" display))
         (binder-delete-item fileid)))
-    (put 'binder--cache 'modification-time (current-time))
+    (setq binder--modification-time (current-time))
     (binder-sidebar-refresh)
     (binder-write-maybe)))
 
@@ -614,7 +614,7 @@ When ARG is non-nil, do not prompt for confirmation."
           (read-string "New name: "
                        (or (binder-get-item-prop fileid 'display) fileid)))
     (binder-set-item-prop fileid 'display name)
-    (put 'binder--cache 'modification-time (current-time))
+    (setq binder--modification-time (current-time))
     (binder-sidebar-refresh)
     (binder-write-maybe)))
 
@@ -635,7 +635,7 @@ When ARG is non-nil, do not prompt for confirmation."
           nil nil
           (binder-get-item-prop (binder-sidebar-get-fileid) 'status))))
   (binder-set-item-prop (binder-sidebar-get-fileid) 'status status)
-  (put 'binder--cache 'modification-time (current-time))
+  (setq binder--modification-time (current-time))
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
@@ -672,7 +672,7 @@ When ARG is non-nil, do not prompt for confirmation."
           index (binder-get-item-index fileid))
     (binder-delete-item fileid)
     (binder-insert-item item (+ index p))
-    (put 'binder--cache 'modification-time (current-time))
+    (setq binder--modification-time (current-time))
     (binder-sidebar-refresh)
     (binder-sidebar-goto-item fileid)))
 
