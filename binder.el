@@ -877,7 +877,11 @@ See `display-buffer-in-side-window' for example options."
 ;;;###autoload
 (define-derived-mode binder-notes-mode
   text-mode "Binder Notes Mode"
-  "Major mode for editing `binder' notes.")
+  "Major mode for editing `binder' notes."
+  (setq header-line-format
+        '((:propertize (or binder--notes-display binder--notes-fileid)
+                       face bold)
+          "  C-c C-c to commit; C-c C-q to quit")))
 
 (define-key binder-notes-mode-map (kbd "C-c C-c") #'binder-notes-commit)
 (define-key binder-notes-mode-map (kbd "C-c C-l") #'binder-notes-expand-window)
