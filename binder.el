@@ -1,8 +1,8 @@
 ;;; binder.el --- major mode for structuring multi-file projects  -*- lexical-binding: t; -*-
 
-;; Copyright (c) 2020 Paul W. Rankin
+;; Copyright (c) 2020 William Rankin
 
-;; Author: Paul W. Rankin <code@paulwrankin.com>
+;; Author: William Rankin <code@william.bydasein.com>
 ;; Keywords: files, outlines
 
 ;; This program is free software; you can redistribute it and/or modify it under
