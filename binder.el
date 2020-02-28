@@ -786,33 +786,43 @@ See `display-buffer-in-side-window' for example options."
 
 (defvar binder--notes-fileid nil)
 (defvar binder--notes-display nil)
-(defvar binder-notes-header-line-format
-  "C-c C-c to commit changes; C-c C-q to quit")
+
+(defun binder-notes-set-notes ()
+  (let ((prop-elt
+         (assq 'notes (binder-get-item binder--notes-fileid)))
+        (notes
+         (string-trim (buffer-substring-no-properties
+                       (point-min) (point-max)))))
+    (if prop-elt
+        (setcdr prop-elt notes)
+      (push (cons 'notes notes)
+            (cdr (binder-get-item binder--notes-fileid)))))
+  (with-current-buffer binder-sidebar-buffer
+    (binder-write-maybe)
+    (binder-sidebar-refresh))
+  (set-buffer-modified-p nil))
+
+(defun binder-notes-get-notes (fileid)
+  (when binder--notes-fileid (binder-notes-set-notes))
+  (with-silent-modifications
+    (erase-buffer)
+    (insert (or (alist-get 'notes (binder-get-item
+                                   (setq binder--notes-fileid fileid)))
+                "")))
+  (setq binder--notes-display
+        (alist-get 'display (binder-get-item binder--notes-fileid))))
 
 (defun binder-notes-init-buffer (fileid)
   (with-current-buffer (get-buffer-create binder-notes-buffer)
     (binder-notes-mode)
-    (unless (string= binder--notes-fileid fileid)
-      (setq binder--notes-fileid fileid)
-      (setq binder--notes-display
-            (alist-get 'display (binder-get-item binder--notes-fileid))))
-    (setq header-line-format binder-notes-header-line-format)
+    (binder-notes-get-notes fileid)
     (current-buffer)))
-
-(defun binder-sidebar-get-notes ()
-  (unless (derived-mode-p 'binder-notes-mode)
-    (user-error "Not in %S" 'binder-notes-mode))
-  (with-silent-modifications
-    (erase-buffer)
-    (insert (or (alist-get 'notes (binder-get-item binder--notes-fileid))
-                ""))))
 
 (defun binder-sidebar-toggle-notes (&optional force)
   (interactive)
   (let ((display-buffer-mark-dedicated t)
         (fileid (binder-sidebar-get-fileid)))
     (with-current-buffer (binder-notes-init-buffer fileid)
-      (binder-sidebar-get-notes)
       (if (get-buffer-window)
           (if force
               (select-window (get-buffer-window))
@@ -833,19 +843,9 @@ See `display-buffer-in-side-window' for example options."
     (user-error "Not in %S" 'binder-notes-mode))
   (if (not (buffer-modified-p))
       (message "(No changes need to be added to binder)")
-    (let ((prop-elt
-           (assq 'notes (binder-get-item binder--notes-fileid)))
-          (notes
-           (string-trim (buffer-substring-no-properties
-                         (point-min) (point-max)))))
-      (if prop-elt
-          (setcdr prop-elt notes)
-        (push (cons 'notes notes) (cdr (binder-get-item binder--notes-fileid)))))
-    (with-current-buffer binder-sidebar-buffer
-      (binder-write)
-      (binder-sidebar-refresh))
-    (set-buffer-modified-p nil)
-    (message "Added notes for %S to binder"
+    (binder-notes-set-notes)
+    (binder-write)
+    (message "Saved notes for %S to binder"
              (or binder--notes-display binder--notes-fileid))))
 
 (defun binder-notes-expand-window ()
@@ -866,8 +866,7 @@ See `display-buffer-in-side-window' for example options."
                (get-buffer-window binder-notes-buffer (selected-frame)))
       (let ((fileid (binder-sidebar-get-fileid)))
         (with-current-buffer binder-notes-buffer
-          (binder-notes-init-buffer fileid)
-          (binder-sidebar-get-notes))))))
+          (binder-notes-init-buffer fileid))))))
 
 (defcustom binder-notes-mode-hook
   '(visual-line-mode)
