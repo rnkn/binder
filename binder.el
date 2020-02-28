@@ -501,7 +501,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
 (defun binder-sidebar-get-fileid ()
   "Return fileid for item at point."
   (save-excursion
-    (beginning-of-line)
+    (if (eobp) (forward-line -1) (beginning-of-line))
     (get-text-property (point) 'binder-fileid)))
 
 (defun binder-sidebar-create (dir)      ; FIXME: this does not create a buffer
