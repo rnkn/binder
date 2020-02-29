@@ -137,7 +137,7 @@ This can be set higher than you may think."
       binder-file))))
 
 (defun binder-find-binder-file ()
-  "Find current binder file."
+  "Find or initialize current binder file."
   (let ((binder-file (expand-file-name binder-default-file (binder-root))))
     (if (file-readable-p binder-file)
         binder-file
@@ -149,12 +149,15 @@ Reads from `binder--cache' if valid, or from binder file if not."
   (let ((binder-file (binder-find-binder-file)))
     (unless binder-file
       (user-error "No binder file found"))
-    (unless (and (string= default-directory binder--directory)
-                 (time-less-p (file-attribute-modification-time
-                               (file-attributes binder-file))
-                              binder--modification-time))
+    (unless (and binder--cache
+                 (string= default-directory binder--directory)
+                 (or (= binder--modification-count 0)
+                     (time-less-p (file-attribute-modification-time
+                                   (file-attributes binder-file))
+                                  binder--modification-time)))
       (with-temp-buffer
         (insert-file-contents binder-file)
+        (goto-char (point-min))
         (setq binder--cache (read (current-buffer)))))
     (setq binder--directory default-directory)
   binder--cache))
@@ -168,14 +171,14 @@ Reads from `binder--cache' if valid, or from binder file if not."
   (let ((binder-file (binder-find-binder-file)))
     (with-temp-buffer
       (insert binder-file-header (pp-to-string binder--cache))
-      (write-file binder-file))))
+      (write-file binder-file)))
+  (setq binder--modification-count 0))
 
 (defun binder-write-maybe ()
   "Write binder data if passed modified threshold."
   (if (< binder--modification-count binder-save-threshold)
       (cl-incf binder--modification-count)
-    (binder-write)
-    (setq binder--modification-count 0)))
+    (binder-write)))
 
 (defun binder-file-relative-to-root (fileid)
   "Return FILEID relative to binder root directory."
