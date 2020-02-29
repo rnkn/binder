@@ -98,11 +98,6 @@ This can be set higher than you may think."
   "Default face for status labels."
   :group 'binder-sidebar-faces)
 
-(defface binder-sidebar-delete
-  '((t (:inherit (error))))
-  "Default face for items marked for removal."
-  :group 'binder-sidebar-faces)
-
 
 ;;; Core Variables
 
