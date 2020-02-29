@@ -690,12 +690,8 @@ When ARG is non-nil, do not prompt for confirmation."
 (defun binder-sidebar-goto-item (fileid)
   "Move point to binder item with FILEID."
   (goto-char (point-min))
-  (let (found)
-    (while (and (< (point) (point-max))
-                (not found))
-      (if (string= (binder-sidebar-get-fileid) fileid)
-          (setq found t)
-        (forward-line 1)))))
+  (text-property-search-forward 'binder-fileid fileid t)
+  (beginning-of-line))
 
 (defun binder-sidebar-shift-down (&optional n)
   "Shift index position of binder item at point down in list."
