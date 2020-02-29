@@ -792,7 +792,7 @@ See `display-buffer-in-side-window' for example options."
   (set-buffer-modified-p nil))
 
 (defun binder-notes-get-notes (fileid)
-  (when binder--notes-fileid (binder-notes-set-notes))
+  (setq binder--notes-fileid fileid)
   (with-silent-modifications
     (erase-buffer)
     (insert (or (binder-get-item-prop binder--notes-fileid 'notes))
