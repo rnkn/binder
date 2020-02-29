@@ -164,7 +164,7 @@ Reads from `binder--cache' if valid, or from binder file if not."
   "Write binder data to file."
   (interactive)
   (mapc (lambda (item)
-          (rassq-delete-all "" item))
+          (setf item (rassq-delete-all "" item)))
         (binder-get-structure))
   (let ((binder-file (binder-find-binder-file)))
     (with-temp-buffer
