@@ -785,27 +785,17 @@ See `display-buffer-in-side-window' for example options."
 (defvar binder--notes-display nil)
 
 (defun binder-notes-set-notes ()
-  (let ((prop-elt
-         (assq 'notes (binder-get-item binder--notes-fileid)))
-        (notes
-         (string-trim (buffer-substring-no-properties
-                       (point-min) (point-max)))))
-    (if prop-elt
-        (setcdr prop-elt notes)
-      (push (cons 'notes notes)
-            (cdr (binder-get-item binder--notes-fileid)))))
-  (with-current-buffer binder-sidebar-buffer
-    (binder-write-maybe)
-    (binder-sidebar-refresh))
+  (binder-set-item-prop binder--notes-fileid 'notes
+                        (string-trim (buffer-substring-no-properties
+                                      (point-min) (point-max))))
   (set-buffer-modified-p nil))
 
 (defun binder-notes-get-notes (fileid)
   (when binder--notes-fileid (binder-notes-set-notes))
   (with-silent-modifications
     (erase-buffer)
-    (insert (or (alist-get 'notes (binder-get-item
-                                   (setq binder--notes-fileid fileid)))
-                "")))
+    (insert (or (binder-get-item-prop binder--notes-fileid 'notes))
+            ""))
   (setq binder--notes-display
         (alist-get 'display (binder-get-item binder--notes-fileid))))
 
