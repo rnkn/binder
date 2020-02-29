@@ -494,21 +494,20 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
     (get-text-property (point) 'binder-fileid)))
 
 ;;;###autoload
-(defun binder-toggle-sidebar ()
+(defun binder-toggle-sidebar (&optional show select)
   "Toggle visibility of binder sidebar side-window."
   (interactive)
   (let ((display-buffer-mark-dedicated t)
         (dir default-directory))
-    (if (get-buffer-window binder-sidebar-buffer (selected-frame))
-        (delete-windows-on binder-sidebar-buffer (selected-frame))
-      (with-current-buffer (get-buffer-create binder-sidebar-buffer)
-        (binder-sidebar-create dir))
-      (display-buffer-in-side-window
-       (get-buffer binder-sidebar-buffer)
-       (append binder-sidebar-display-alist
-               (when binder-sidebar-persistent
-                 (list '(window-parameters (no-delete-other-windows . t))))))
-      (when binder-sidebar-select-window
+    (if (and (not show) (get-buffer-window binder-sidebar-buffer))
+        (delete-windows-on binder-sidebar-buffer)
+      (with-current-buffer (binder-sidebar-create dir)
+        (display-buffer-in-side-window
+         (current-buffer)
+         (append binder-sidebar-display-alist
+                 (when binder-sidebar-persistent
+                   (list '(window-parameters (no-delete-other-windows . t)))))))
+      (when (or select binder-sidebar-select-window)
         (select-window
          (get-buffer-window binder-sidebar-buffer (selected-frame)))))))
 
@@ -782,7 +781,7 @@ See `display-buffer-in-side-window' for example options."
   (setq binder--notes-display
         (binder-get-item-prop binder--notes-fileid 'display)))
 
-(defun binder-sidebar-toggle-notes (&optional force)
+(defun binder-sidebar-toggle-notes (&optional show select)
   (interactive)
   (let ((display-buffer-mark-dedicated t)
         (fileid (binder-sidebar-get-fileid)))
