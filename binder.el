@@ -424,6 +424,8 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
 (defun binder-sidebar-refresh ()
   "Redraw binder sidebar, reading from cache."
   (interactive)
+  (let ((sidebar-buffer (get-buffer binder-sidebar-buffer)))
+    (when sidebar-buffer (with-current-buffer sidebar-buffer
   (with-silent-modifications
     (let ((x (point)))
       (erase-buffer)
