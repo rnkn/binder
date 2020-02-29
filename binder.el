@@ -791,8 +791,9 @@ See `display-buffer-in-side-window' for example options."
                                       (point-min) (point-max))))
   (set-buffer-modified-p nil))
 
-(defun binder-notes-get-notes (fileid)
-  (setq binder--notes-fileid fileid)
+(defun binder-notes-get-notes (directory fileid)
+  (setq default-directory directory
+        binder--notes-fileid fileid)
   (with-silent-modifications
     (erase-buffer)
     (insert (or (binder-get-item-prop binder--notes-fileid 'notes)
@@ -803,14 +804,15 @@ See `display-buffer-in-side-window' for example options."
 (defun binder-sidebar-toggle-notes (&optional show select)
   (interactive)
   (let ((display-buffer-mark-dedicated t)
+        (directory default-directory)
         (fileid (binder-sidebar-get-fileid)))
     (with-current-buffer (get-buffer-create binder-notes-buffer)
       (if (get-buffer-window)
           (if show
-              (binder-notes-get-notes fileid)
+              (binder-notes-get-notes directory fileid)
             (delete-windows-on))
-        (binder-notes-get-notes fileid)
         (binder-notes-mode)
+        (binder-notes-get-notes directory fileid)
         (display-buffer-in-side-window
          (current-buffer)
          (append binder-notes-display-alist
@@ -851,9 +853,10 @@ See `display-buffer-in-side-window' for example options."
     (redisplay)
     (when (and binder-notes-keep-in-sync
                (get-buffer-window binder-notes-buffer))
-      (let ((fileid (binder-sidebar-get-fileid)))
+      (let ((directory default-directory)
+            (fileid (binder-sidebar-get-fileid)))
         (with-current-buffer (get-buffer binder-notes-buffer)
-          (binder-notes-get-notes fileid))))))
+          (binder-notes-get-notes directory fileid))))))
 
 (defcustom binder-notes-mode-hook
   '(visual-line-mode)
