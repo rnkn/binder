@@ -511,6 +511,25 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
         (select-window
          (get-buffer-window binder-sidebar-buffer (selected-frame)))))))
 
+(defun binder-sidebar-highligh-current ()
+  (when (binder-root)
+    (let ((fileid (binder-file-relative-to-root (buffer-file-name)))
+          (sidebar-buffer (get-buffer binder-sidebar-buffer)))
+      (when (buffer-live-p sidebar-buffer)
+        (with-current-buffer sidebar-buffer
+          (binder-sidebar-goto-item fileid)
+          (with-silent-modifications
+            (put-text-property (line-beginning-position) (line-beginning-position 2)
+                               'face 'binder-sidebar-highlight)))))))
+
+(defun binder-reveal-in-sidebar ()
+  (interactive)
+  (binder-read)
+  (let ((fileid (binder-file-relative-to-root (buffer-file-name))))
+    (binder-toggle-sidebar t t)
+    (with-current-buffer (get-buffer binder-sidebar-buffer)
+      (binder-sidebar-goto-item fileid))))
+
 (defun binder-sidebar-find-file (arg)
   "Visit binder item at point.
 When ARG is non-nil, visit in new window."
