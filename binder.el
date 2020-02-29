@@ -701,11 +701,12 @@ When ARG is non-nil, do not prompt for confirmation."
         item index)
     (setq item (binder-get-item fileid)
           index (binder-get-item-index fileid))
-    (binder-delete-item fileid)
-    (binder-insert-item item (+ index p))
-    (setq binder--modification-time (current-time))
-    (binder-sidebar-refresh)
-    (binder-sidebar-goto-item fileid)))
+    (when (<= 0 (+ index p) (1- (length (binder-get-structure))))
+      (binder-delete-item fileid)
+      (binder-insert-item item (+ index p))
+      (setq binder--modification-time (current-time))
+      (binder-sidebar-refresh)
+      (binder-sidebar-goto-item fileid))))
 
 (defun binder-sidebar-shift-up (&optional n)
   "Shift index position of binder item at point up in list."
