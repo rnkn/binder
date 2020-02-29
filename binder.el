@@ -84,7 +84,7 @@ This can be set higher than you may think."
   :group 'binder-sidebar-faces)
 
 (defface binder-sidebar-highlight
-  '((t (:inherit (secondary-selection))))
+  '((t (:extend t :inherit (secondary-selection))))
   "Default face for highlighted items."
   :group 'binder-sidebar-faces)
 
