@@ -63,10 +63,8 @@
   :group 'binder)
 
 (defcustom binder-save-threshold
-  25
-  "Integer of changes before binder file is automatically saved.
-
-This can be set higher than you may think."
+  20
+  "Integer of changes before binder file is automatically saved."
   :type 'integer
   :safe 'integerp
   :group 'binder)
@@ -180,26 +178,16 @@ Reads from `binder--cache' if valid, or from binder file if not."
       (cl-incf binder--modification-count)
     (binder-write)))
 
-(defun binder-file-relative-to-root (fileid)
-  "Return FILEID relative to binder root directory."
+(defun binder-file-relative-to-root (filepath)
+  "Return FILEPATH relative to binder root directory."
   (let ((root (binder-root)))
     (when root
-      (string-trim (expand-file-name fileid)
+      (string-trim (expand-file-name filepath)
                    (expand-file-name root)))))
 
 (defun binder-get-structure ()
   "Return binder data structure component."
   (alist-get 'structure (binder-read)))
-
-(defun binder-get-prop-list (prop)
-  "Return list of values for PROP."
-  (delq nil
-        (mapcar
-         (lambda (item)
-           (let ((value (alist-get prop item)))
-             (when (and (stringp value) (< 0 (string-width value)))
-               value)))
-         (binder-get-structure))))
 
 (defun binder-get-item (fileid)
   "Return binder item association list for FILEID."
@@ -226,8 +214,8 @@ Reads from `binder--cache' if valid, or from binder file if not."
 
 (defun binder-insert-item (item index)
   "Insert binder ITEM at position INDEX."
+  (unless (listp item) (setq item (list item)))
   (let ((structure (binder-get-structure)))
-    (unless (listp item) (setq item (list item)))
     (setcdr (assq 'structure (binder-read))
             (append (seq-take structure index)
                     (cons item (seq-drop structure index)))))
@@ -241,22 +229,15 @@ Reads from `binder--cache' if valid, or from binder file if not."
   (setq binder--modification-time (current-time))
   (binder-write-maybe))
 
-;; FIXME: unused for flat file structure
-(defun binder-get-file-tree (fileid)
-  "Return tree structure for FILEID."
-  (setq fileid (abbreviate-file-name (expand-file-name fileid)))
-  (when (file-exists-p fileid)
-    (let ((last-file (file-name-nondirectory fileid))
-          (root (binder-root))
-          tree)
-      (while (not (or (file-equal-p fileid root)
-                      (null fileid)
-                      (string-match locate-dominating-stop-dir-regexp fileid)))
-        (setq fileid (file-name-directory (directory-file-name fileid))
-              tree (list (file-name-nondirectory
-                          (directory-file-name fileid))
-                         tree)))
-      tree)))
+(defun binder-get-prop-list (prop)
+  "Return list of values for PROP."
+  (delq nil
+        (mapcar
+         (lambda (item)
+           (let ((value (alist-get prop item)))
+             (when (and (stringp value) (< 0 (string-width value)))
+               value)))
+         (binder-get-structure))))
 
 
 ;;; Global Minor Mode
@@ -493,20 +474,22 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
                 (insert binder-sidebar-status-char status)
                 (put-text-property x (line-end-position)
                                    'face 'binder-sidebar-status)))
-          (insert "\n"))))
-      (goto-char x))))
+            (insert "\n"))))
+      (goto-char x)))))))
+
+(defun binder-sidebar-create (dir)
+  "Create binder sidebar buffer for DIR."
+  (with-current-buffer (get-buffer-create binder-sidebar-buffer)
+    (setq default-directory dir)
+    (binder-sidebar-mode)
+    (binder-sidebar-refresh)
+    (current-buffer)))
 
 (defun binder-sidebar-get-fileid ()
   "Return fileid for item at point."
   (save-excursion
     (if (eobp) (forward-line -1) (beginning-of-line))
     (get-text-property (point) 'binder-fileid)))
-
-(defun binder-sidebar-create (dir)      ; FIXME: this does not create a buffer
-  "Create binder sidebar buffer for DIR."
-  (setq default-directory dir)
-  (binder-sidebar-refresh)
-  (binder-sidebar-mode))
 
 ;;;###autoload
 (defun binder-toggle-sidebar ()
@@ -584,7 +567,8 @@ When ARG is non-nil, visit in new window."
 (defun binder-sidebar-add-all-files ()
   "Add all files in current directory to binder."
   (interactive)
-  (when (y-or-n-p (format "Add all files in %s" (abbreviate-file-name default-directory)))
+  (when (y-or-n-p (format "Add all files in %s"
+                          (abbreviate-file-name default-directory)))
     (dolist (file (directory-files default-directory nil "^[^.]"))
       (binder-sidebar-add-file file))))
 
@@ -620,10 +604,8 @@ When ARG is non-nil, do not prompt for confirmation."
         display)
     (setq display (or (binder-get-item-prop fileid 'display)
                       fileid))
-    (if arg
-        (binder-delete-item fileid)
-      (when (y-or-n-p (format "Really remove item %S?" display))
-        (binder-delete-item fileid)))
+    (when (or arg (y-or-n-p (format "Really remove item %S?" display)))
+      (binder-delete-item fileid))
     (setq binder--modification-time (current-time))
     (binder-sidebar-refresh)
     (binder-write-maybe)))
@@ -657,7 +639,6 @@ When ARG is non-nil, do not prompt for confirmation."
         include)
     (setq include (not (binder-get-item-prop fileid 'include)))
     (binder-set-item-prop (binder-sidebar-get-fileid) 'include include))
-  ;; (forward-line 1)
   (setq binder--modification-time (current-time))
   (binder-sidebar-refresh)
   (binder-write-maybe))
@@ -679,9 +660,9 @@ When ARG is non-nil, do not prompt for confirmation."
   (interactive)
   (customize-set-variable 'binder-sidebar-hide-file-extensions
                           (not binder-sidebar-hide-file-extensions))
-  (let ((current-fileid (binder-sidebar-get-fileid)))
+  (let ((fileid (binder-sidebar-get-fileid)))
     (binder-sidebar-refresh)
-    (binder-sidebar-goto-item current-fileid))
+    (binder-sidebar-goto-item fileid))
   (message "%s file extensions"
            (capitalize
             (if binder-sidebar-hide-file-extensions
@@ -797,32 +778,30 @@ See `display-buffer-in-side-window' for example options."
     (insert (or (binder-get-item-prop binder--notes-fileid 'notes))
             ""))
   (setq binder--notes-display
-        (alist-get 'display (binder-get-item binder--notes-fileid))))
-
-(defun binder-notes-init-buffer (fileid)
-  (with-current-buffer (get-buffer-create binder-notes-buffer)
-    (binder-notes-mode)
-    (binder-notes-get-notes fileid)
-    (current-buffer)))
+        (binder-get-item-prop binder--notes-fileid 'display)))
 
 (defun binder-sidebar-toggle-notes (&optional force)
   (interactive)
   (let ((display-buffer-mark-dedicated t)
         (fileid (binder-sidebar-get-fileid)))
-    (with-current-buffer (binder-notes-init-buffer fileid)
+    (with-current-buffer (get-buffer-create binder-notes-buffer)
       (if (get-buffer-window)
-          (if force
-              (select-window (get-buffer-window))
+          (if show
+              (binder-notes-get-notes fileid)
             (delete-windows-on))
-        (display-buffer-in-side-window (current-buffer)
+        (binder-notes-get-notes fileid)
+        (binder-notes-mode)
+        (display-buffer-in-side-window
+         (current-buffer)
          (append binder-notes-display-alist
                  (when binder-sidebar-persistent
-                   (list '(window-parameters (no-delete-other-windows . t))))))))))
+                   (list '(window-parameters (no-delete-other-windows . t))))))
+        (when select
+          (select-window (get-buffer-window)))))))
 
 (defun binder-sidebar-open-notes ()
   (interactive)
-  (binder-sidebar-toggle-notes t)
-  (select-window (get-buffer-window binder-notes-buffer (selected-frame))))
+  (binder-sidebar-toggle-notes t t))
 
 (defun binder-notes-commit ()
   (interactive)
@@ -832,7 +811,8 @@ See `display-buffer-in-side-window' for example options."
       (message "(No changes need to be added to binder)")
     (binder-notes-set-notes)
     (binder-write)
-    (message "Saved notes for %S to binder"
+    (binder-sidebar-refresh)
+    (message "Saved notes for %s to binder"
              (or binder--notes-display binder--notes-fileid))))
 
 (defun binder-notes-expand-window ()
@@ -850,10 +830,10 @@ See `display-buffer-in-side-window' for example options."
   (while-no-input
     (redisplay)
     (when (and binder-notes-keep-in-sync
-               (get-buffer-window binder-notes-buffer (selected-frame)))
+               (get-buffer-window binder-notes-buffer))
       (let ((fileid (binder-sidebar-get-fileid)))
-        (with-current-buffer binder-notes-buffer
-          (binder-notes-init-buffer fileid))))))
+        (with-current-buffer (get-buffer binder-notes-buffer)
+          (binder-notes-get-notes fileid))))))
 
 (defcustom binder-notes-mode-hook
   '(visual-line-mode)
