@@ -795,8 +795,8 @@ See `display-buffer-in-side-window' for example options."
   (setq binder--notes-fileid fileid)
   (with-silent-modifications
     (erase-buffer)
-    (insert (or (binder-get-item-prop binder--notes-fileid 'notes))
-            ""))
+    (insert (or (binder-get-item-prop binder--notes-fileid 'notes)
+            "")))
   (setq binder--notes-display
         (binder-get-item-prop binder--notes-fileid 'display)))
 
@@ -815,9 +815,9 @@ See `display-buffer-in-side-window' for example options."
          (current-buffer)
          (append binder-notes-display-alist
                  (when binder-sidebar-persistent
-                   (list '(window-parameters (no-delete-other-windows . t))))))
-        (when select
-          (select-window (get-buffer-window)))))))
+                   (list '(window-parameters (no-delete-other-windows . t)))))))
+      (when select
+        (select-window (get-buffer-window))))))
 
 (defun binder-sidebar-open-notes ()
   (interactive)
