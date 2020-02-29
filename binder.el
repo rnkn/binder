@@ -213,7 +213,7 @@ Reads from `binder--cache' if valid, or from binder file if not."
   "Set VALUE of PROP for binder item for FILEID."
   (let ((item (binder-get-item fileid)))
     (if (string-empty-p value)
-        (assq-delete-all prop item)
+        (setf item (assq-delete-all prop item))
       (let ((prop-elt (assq prop item)))
         (if prop-elt
             (setcdr prop-elt value)
@@ -229,15 +229,15 @@ Reads from `binder--cache' if valid, or from binder file if not."
   (let ((structure (binder-get-structure)))
     (unless (listp item) (setq item (list item)))
     (setcdr (assq 'structure (binder-read))
-            (nconc (seq-take structure index)
-                   (cons item (seq-drop structure index)))))
+            (append (seq-take structure index)
+                    (cons item (seq-drop structure index)))))
   (setq binder--modification-time (current-time))
   (binder-write-maybe))
 
 (defun binder-delete-item (fileid)
   "Delete binder item for FILEID."
   (setcdr (assq 'structure (binder-read))
-          (delq (binder-get-item fileid) (binder-get-structure)))
+          (remove (binder-get-item fileid) (binder-get-structure)))
   (setq binder--modification-time (current-time))
   (binder-write-maybe))
 
