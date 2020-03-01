@@ -834,7 +834,9 @@ See `display-buffer-in-side-window' for example options."
       (message "(No changes need to be added to binder)")
     (binder-notes-set-notes)
     (binder-write)
-    (binder-sidebar-refresh)
+    (when (window-live-p (get-buffer-window binder-sidebar-buffer))
+      (with-current-buffer (get-buffer binder-sidebar-buffer)
+        (binder-sidebar-refresh)))
     (message "Saved notes for %s to binder"
              (or binder--notes-display binder--notes-fileid))))
 
