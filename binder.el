@@ -116,7 +116,7 @@
 
 (defun binder-root ()
   "Find the root directory with a binder file."
-  (locate-dominating-file default-directory binder-default-file))
+  (expand-file-name (locate-dominating-file default-directory binder-default-file)))
 
 (defun binder-init-binder-file ()
   "Initialize a binder file."
@@ -148,7 +148,7 @@ Reads from `binder--cache' if valid, or from binder file if not."
     (unless binder-file
       (user-error "No binder file found"))
     (unless (and binder--cache
-                 (string= default-directory binder--directory)
+                 (string= binder--directory default-directory)
                  (or (= binder--modification-count 0)
                      (time-less-p (file-attribute-modification-time
                                    (file-attributes binder-file))
@@ -249,25 +249,19 @@ Or visit Nth previous file if N is negative."
   (let ((this-fileid
          (binder-file-relative-to-root
           (or (buffer-file-name) default-directory)))
-        (struct (binder-get-structure))
-        item index next-index next-fileid)
-    (setq item (binder-get-item this-fileid))
-    (if (not item)
-        (user-error "%S not in a binder" this-fileid)
-      (setq index (seq-position struct item)
-            next-index (+ index n))
-      (if (and (<= 0 next-index)
-               (< next-index (length struct)))
-          (and
-           (setq next-fileid (expand-file-name (car (nth next-index struct))
-                                               (binder-root)))
-           (find-file-existing next-fileid))
-        (message "End of binder"))
-      (unless overriding-terminal-local-map
-        (let ((keys (substring (this-single-command-keys) 0 -1))
-              (map (cdr binder-mode-map)))
-          (mapc (lambda (k) (setq map (assq k map))) keys)
-          (when (consp map) (set-transient-map (cdr map) t)))))))
+        (structure (binder-get-structure))
+        index next-index next-fileid)
+    (setq index (binder-get-item-index this-fileid)
+          next-index (+ index n))
+    (if (<= 0 next-index (1- (length structure)))
+        (find-file-existing
+         (expand-file-name (car (nth next-index structure)) (binder-root)))
+      (message "End of binder"))
+    (unless overriding-terminal-local-map
+      (let ((keys (substring (this-single-command-keys) 0 -1))
+            (map (cdr binder-mode-map)))
+        (mapc (lambda (k) (setq map (assq k map))) keys)
+        (when (consp map) (set-transient-map (cdr map) t))))))
 
 (defun binder-previous (&optional n)
   "Visit Nth previous file in binder.
@@ -275,48 +269,52 @@ Or visit Nth next file if N is negative."
   (interactive "p")
   (binder-next (- n)))
 
-(defun binder-add (fileid)
+(defun binder-add-file (fileid &optional index)
   (interactive "FAdd file (extension optional): ")
   (setq fileid (binder-file-relative-to-root fileid))
   (unless (< 0 (string-width fileid))
     (user-error "No file name supplied"))
+  ;; If FILEID is not a directory and no file extension was provided,
+  ;; add the binder's default file extensions.
   (unless (or (directory-name-p fileid)
               (and (string-match "\\.[^.]+\\'" fileid)
 	               (not (= 0 (match-beginning 0)))))
     (setq fileid
           (concat fileid "." (alist-get 'default-extension (binder-read)))))
-  (let ((filepath
-         (expand-file-name fileid (binder-root)))
-        (this-file-index
-         (when (buffer-file-name)
-           (binder-get-item-index
-            (binder-file-relative-to-root (buffer-file-name)))))
-        index)
+  ;; If the file/directory does not exist, create it.
+  (let ((filepath (expand-file-name fileid (binder-root))))
     (unless (file-exists-p filepath)
       (if (directory-name-p filepath)
-          (make-directory filepath)
+          (make-directory filepath t)
         (with-current-buffer (find-file-noselect filepath)
           (write-file filepath))))
-    (setq index
-          (cond (this-file-index
-                 (1+ this-file-index))
-                ((eq major-mode 'binder-sidebar-mode)
-                 (1+ (binder-sidebar-get-index)))
-                (t (length (binder-get-structure)))))
+    ;; Insert FILEID into binder at INDEX, or after current file.
     (unless (binder-get-item fileid)
+      (unless index
+        (let ((this-file-index
+               (binder-get-item-index (binder-file-relative-to-root
+                    (or (buffer-file-name) default-directory)))))
+          (setq index (if this-file-index
+                          (1+ this-file-index)
+                        (length (binder-get-structure))))))
       (binder-insert-item fileid index))
-    (with-current-buffer (get-buffer-create binder-sidebar-buffer)
-      (binder-sidebar-refresh)
-      (binder-write-maybe)
-      (binder-sidebar-goto-item fileid))
-    (find-file filepath)))
+    (binder-write-maybe)
+    ;; When binder sidebar is active, refresh it.
+    (when (window-live-p (get-buffer-window (get-buffer binder-sidebar-buffer)))
+      (with-current-buffer (get-buffer binder-sidebar-buffer)
+        (binder-sidebar-refresh)
+        (binder-sidebar-goto-item fileid)))
+    ;; Finally, visit the file FILEPATH.
+    (let ((pop-up-windows binder-sidebar-pop-up-windows))
+      (find-file filepath))))
 
 (defvar binder-mode-map (make-sparse-keymap))
 
 (define-key binder-mode-map (kbd "C-c ]") #'binder-next)
 (define-key binder-mode-map (kbd "C-c [") #'binder-previous)
-(define-key binder-mode-map (kbd "C-c ;") #'binder-toggle-sidebar)
-(define-key binder-mode-map (kbd "C-c :") #'binder-add)
+(define-key binder-mode-map (kbd "C-c ;") #'binder-reveal-in-sidebar)
+(define-key binder-mode-map (kbd "C-c '") #'binder-toggle-sidebar)
+(define-key binder-mode-map (kbd "C-c :") #'binder-add-file)
 
 ;;;###autoload
 (define-minor-mode binder-mode
@@ -424,8 +422,6 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
 (defun binder-sidebar-refresh ()
   "Redraw binder sidebar, reading from cache."
   (interactive)
-  (let ((sidebar-buffer (get-buffer binder-sidebar-buffer)))
-    (when sidebar-buffer (with-current-buffer sidebar-buffer
   (with-silent-modifications
     (let ((x (point)))
       (erase-buffer)
@@ -477,39 +473,37 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
                 (put-text-property x (line-end-position)
                                    'face 'binder-sidebar-status)))
             (insert "\n"))))
-      (goto-char x)))))))
+      (goto-char x))))
 
-(defun binder-sidebar-create (dir)
-  "Create binder sidebar buffer for DIR."
+(defun binder-sidebar-create-buffer (directory)
+  "Return binder sidebar buffer for DIRECTORY."
   (with-current-buffer (get-buffer-create binder-sidebar-buffer)
-    (setq default-directory dir)
+    (setq default-directory directory)
     (binder-sidebar-mode)
-    (binder-sidebar-refresh)
     (current-buffer)))
+
+(defun binder-sidebar-create-window (&optional directory)
+  "Return binder sidebar window for DIRECTORY.
+Defaults to current directory."
+  (let ((display-buffer-mark-dedicated t))
+    (with-current-buffer (binder-sidebar-create-buffer
+                          (or directory default-directory))
+      (display-buffer-in-side-window
+       (current-buffer)
+       (append binder-sidebar-display-alist
+               (when binder-sidebar-persistent
+                 (list '(window-parameters (no-delete-other-windows . t)))))))))
+
+(defun binder-sidebar-delete-windows ()
+  "Delete binder sidebar notes windows."
+  (delete-windows-on binder-notes-buffer)
+  (delete-windows-on binder-sidebar-buffer))
 
 (defun binder-sidebar-get-fileid ()
   "Return fileid for item at point."
   (save-excursion
     (if (eobp) (forward-line -1) (beginning-of-line))
     (get-text-property (point) 'binder-fileid)))
-
-;;;###autoload
-(defun binder-toggle-sidebar (&optional show select)
-  "Toggle visibility of binder sidebar side-window."
-  (interactive)
-  (let ((display-buffer-mark-dedicated t)
-        (dir default-directory))
-    (if (and (not show) (get-buffer-window binder-sidebar-buffer))
-        (delete-windows-on binder-sidebar-buffer)
-      (with-current-buffer (binder-sidebar-create dir)
-        (display-buffer-in-side-window
-         (current-buffer)
-         (append binder-sidebar-display-alist
-                 (when binder-sidebar-persistent
-                   (list '(window-parameters (no-delete-other-windows . t)))))))
-      (when (or select binder-sidebar-select-window)
-        (select-window
-         (get-buffer-window binder-sidebar-buffer (selected-frame)))))))
 
 (defun binder-sidebar-highligh-current ()
   (when (binder-root)
@@ -521,14 +515,6 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
           (with-silent-modifications
             (put-text-property (line-beginning-position) (line-beginning-position 2)
                                'face 'binder-sidebar-highlight)))))))
-
-(defun binder-reveal-in-sidebar ()
-  (interactive)
-  (binder-read)
-  (let ((fileid (binder-file-relative-to-root (buffer-file-name))))
-    (binder-toggle-sidebar t t)
-    (with-current-buffer (get-buffer binder-sidebar-buffer)
-      (binder-sidebar-goto-item fileid))))
 
 (defun binder-sidebar-find-file (arg)
   "Visit binder item at point.
@@ -594,27 +580,10 @@ When ARG is non-nil, visit in new window."
 
 (defun binder-sidebar-new-file (fileid)
   "Add a new file to binder as FILEID and visit it."
-  (interactive "sNew file (extension optional): ")
-  (unless (< 0 (string-width fileid))
-    (user-error "No file name supplied"))
-  (unless (or (directory-name-p fileid)
-              (and (string-match "\\.[^.]+\\'" fileid)
-	               (not (= 0 (match-beginning 0)))))
-    (setq fileid
-          (concat fileid "." (alist-get 'default-extension (binder-read)))))
-  (unless (binder-get-item fileid)
-    (binder-insert-item fileid (1+ (binder-sidebar-get-index))))
-  (unwind-protect
-      (let ((pop-up-windows binder-sidebar-pop-up-windows)
-            (filepath (expand-file-name fileid (binder-root))))
-        (if (directory-name-p filepath)
-            (make-directory filepath)
-        (find-file filepath)
-        (write-file filepath)))
-    (with-current-buffer (get-buffer-create binder-sidebar-buffer)
-      (setq binder--modification-time (current-time))
-      (binder-sidebar-refresh)
-      (binder-write-maybe))))
+  (interactive "FAdd file (extension optional): ")
+  (unless (eq major-mode 'binder-sidebar-mode)
+    (user-error "Not in %S" 'binder-sidebar-mode))
+  (binder-add-file fileid (1+ (binder-sidebar-get-index))))
 
 (defun binder-sidebar-remove (arg)
   "Remove binder item at point.
@@ -715,6 +684,7 @@ When ARG is non-nil, do not prompt for confirmation."
   (binder-sidebar-shift-down (- n)))
 
 (defun binder-sidebar-narrow-to-status (status)
+  "Narrow sidebar to items with STATUS."
   (interactive
    (list (completing-read-default
           "Narrow to status: " (binder-get-prop-list 'status))))
@@ -723,9 +693,40 @@ When ARG is non-nil, do not prompt for confirmation."
   (binder-sidebar-refresh))
 
 ;;;###autoload
+(defun binder-reveal-in-sidebar ()
+  "Reveal current file in binder sidebar.
+
+Unconditionally activates `binder-mode'."
+  (interactive)
+  (binder-mode t)
+  (let ((filepath (or (buffer-file-name) default-directory)))
+    (select-window (binder-sidebar-create-window (binder-root)))
+    (unless (string= filepath (binder-root))
+      (setq fileid (binder-file-relative-to-root filepath))
+      (if (binder-get-item fileid)
+          (binder-sidebar-goto-item fileid)
+        (when (y-or-n-p (format "Add %s to binder? " fileid))
+          (binder-sidebar-add-file fileid)
+          (binder-sidebar-refresh)
+          (binder-sidebar-goto-item fileid))))))
+
+;;;###autoload
+(defun binder-toggle-sidebar ()
+  "Toggle visibility of binder sidebar window."
+  (interactive)
+  (if (window-live-p (get-buffer-window binder-sidebar-buffer))
+      (delete-windows-on (get-buffer binder-sidebar-buffer))
+    (binder-sidebar-create-window)
+    (with-current-buffer (get-buffer binder-sidebar-buffer)
+      (binder-sidebar-refresh)
+      (when binder-sidebar-select-window
+        (select-window (get-buffer-window))))))
+
+;;;###autoload
 (define-derived-mode binder-sidebar-mode
   special-mode "Binder Sidebar"
   "Major mode for working with `binder' projects."
+  (binder-sidebar-refresh)
   (add-hook 'post-command-hook 'binder-notes-refresh-maybe t t))
 
 (define-key binder-sidebar-mode-map (kbd "g") #'binder-sidebar-refresh)
@@ -868,6 +869,9 @@ See `display-buffer-in-side-window' for example options."
 (define-derived-mode binder-notes-mode
   text-mode "Binder Notes Mode"
   "Major mode for editing `binder' notes."
+  ;; (setq default-directory
+  ;;       (with-current-buffer (get-buffer binder-sidebar-buffer)
+  ;;         default-directory))
   (setq header-line-format
         '((:propertize (or binder--notes-display binder--notes-fileid)
                        face bold)
