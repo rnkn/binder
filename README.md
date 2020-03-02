@@ -7,11 +7,11 @@ program design are subject to change.**
 
 ![screenshot](https://user-images.githubusercontent.com/1256849/75653252-ec7b8300-5ca8-11ea-9d7d-af6a528abc2c.png)
 
-Binder is collection of interlinked modes to facilitate working on a writing
-project in multiple files. It is heavily inspired by the binder feature in the
-[macOS writing app Scrivener][scriv].
+Binder is global minor mode (and associated major modes) to facilitate working
+on a writing project in multiple files. It is heavily inspired by the binder
+feature in the [macOS writing app Scrivener][scriv].
 
-The rational behind working this way is to split a large writing project into
+The rationale behind working this way is to split a large writing project into
 much smaller pieces.
 
 [scriv]: https://www.literatureandlatte.com/scrivener/features?os=macOS
@@ -35,14 +35,14 @@ repeated by repeating only the last key.
 You probably want some idea of the structure of your binder project...
 
 - `binder-reveal-in-sidebar` (bound to `C-c ;`) will find the current file in
-  the binder sidebar (see blow) or call `binder-init-binder-file` if there is
+  the binder sidebar (see below) or call `binder-init-binder-file` if there is
   none.
 - `binder-toggle-sidebar` (bound to `C-c '`) toggles the visibility of the
   binder sidebar.
 
-And when you're writing and what to add something new, you can with...
+And when you're writing and want to quickly add something new, you can with...
 
-- `binder-add-file` (bound to `C-c :`) prompts for a file-name and add this
+- `binder-add-file` (bound to `C-c :`) prompts for a file-name and adds this
   possibly non-existent file to the binder after the current file's index. If no
   file-name extension is provided, use value of the binder's `default-extension`
   property (set with `binder-default-file-extention` option).
@@ -74,6 +74,12 @@ Each item in the binder sidebar displays the following information:
    (default `#`). The display of this value can be set with the
    `binder-sidebar-status-column` option.
 
+Add an item with `binder-sidebar-add-file` (bound to `a`) or add all files in
+directory with `binder-sidebar-add-all-files` (bound to `A`). Add a new file
+with `binder-sidebar-new-file` (bound to `M-RET`). Remove items with
+`binder-sidebar-remove` (bound to `d`) -- this *does not delete the files*, only
+removes them from the binder.
+
 Items can be reordered with `binder-sidebar-shift-up` (bound to `M-p` & `M-up`)
 and `binder-sidebar-shift-down` (bound to `M-n` & `M-down`).
 
@@ -89,6 +95,10 @@ status, therefore it won't make sense to use them in conjunction.)
 The notes buffer (see below) can be accessed with either
 `binder-sidebar-open-notes` (bound to `z`) or `binder-sidebar-toggle-notes`
 (bound to `i`).
+
+Hide item file extensions by setting the `binder-sidebar-hide-file-extensions`
+option. This can be toggled with `binder-sidebar-toggle-file-extensions` (bound
+to `E`).
 
 You can customize how the sidebar window is displayed by setting
 `binder-sidebar-display-alist` option.
