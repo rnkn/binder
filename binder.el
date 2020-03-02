@@ -1,4 +1,4 @@
-;;; binder.el --- Modes for working with a multi-file writing project  -*- lexical-binding: t; -*-
+;;; binder.el --- Global minor mode to facilitate multi-file writing projects  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2020  Paul William Rankin
 
