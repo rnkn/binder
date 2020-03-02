@@ -1,0 +1,9 @@
+Type C-c ; to reveal this file in the sidebar. See that although the filename is foo.txt it is displayed as "beginning". You can change the display name of a binder item with r.
+
+Type q in the sidebar to quit the window.
+
+Now try C-c ' to toggle the sidebar. Notice toggling the sidebar *on* is basically the save as revealing the current file in the sidebar. You can change this by setting binder-sidebar-select-window.
+
+Type C-x 2 to split this window, and C-x 1 to delete-other-windows. Notice the sidebar is still there? It's tough that way. It needs to be quit explicitly by selecting and typing q or C-c ' to toggle. You can change this by setting binder-sidebar-persistent.
+
+Type C-c ] to go to the next file.
