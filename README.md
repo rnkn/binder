@@ -137,10 +137,17 @@ will visit the original file corresponding to the text at point.
 
 ## Why not just use Org Mode? ##
 
-Org Mode is nice, but it's also a very *heavy* tool that almost insists that
-everything be done within Org Mode. I prefer to keep my writing in a collection
-of separate text files. It feels easier to open and write in an empty text file
-than use headings, narrowing and indirect buffers.
+[Org Mode][] is nice, but it's also a very *heavy* tool that almost insists that
+everything be done within Org Mode. This isn't useful if you want to write in a
+different format, e.g. [Markdown][] or [Fountain][].
+
+Also, I prefer to keep my writing in a collection of separate text files. It
+feels nicer to work on something small and self-contained than to organize a
+large file with headings and use indirect buffers with narrowing.
+
+[org mode]: https://orgmode.org
+[markdown]: http://jblevins.org/projects/markdown-mode/
+[fountain]: https://github.com/rnkn/fountain-mode
 
 ## Requirements ##
 
