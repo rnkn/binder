@@ -611,7 +611,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
               (display (alist-get 'display item))
               (notes (alist-get 'notes item))
               (status (alist-get 'status item))
-              marked missing)
+              marked missing status-overwrite)
           ;; Set whether FILEID is MARKED and MISSING.
           (when (member fileid binder--sidebar-marked)
             (setq marked t))
@@ -654,10 +654,12 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
           ;; cool, right?
           (when (and status (< 0 (string-width status)))
             (move-to-column binder-sidebar-status-column)
+            (unless (eolp) (setq status-overwrite t))
             (indent-to-column binder-sidebar-status-column)
-            (let ((x (point)))
+            (let ((x (1- (point))))
               (delete-region x (line-end-position))
-              (insert binder-sidebar-status-char status)
+              (insert (if status-overwrite "~" " ")
+                      binder-sidebar-status-char status)
               (put-text-property x (line-end-position)
                                  'face 'binder-sidebar-status)))
           (insert "\n")))
