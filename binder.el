@@ -1,9 +1,13 @@
-;;; binder.el --- major mode for structuring multi-file projects  -*- lexical-binding: t; -*-
+;;; binder.el --- Major mode for structuring multi-file projects  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2020 William Rankin
 
 ;; Author: William Rankin <code@william.bydasein.com>
 ;; Keywords: files, outlines
+;; Keywords: wp, text
+;; Version: 0.1.0
+;; Package-Requires: ((emacs "25.3"))
+;; URL: https://github.com/rnkn/binder
 
 ;; This program is free software; you can redistribute it and/or modify it under
 ;; the terms of the GNU General Public License as published by the Free Software
@@ -20,7 +24,145 @@
 
 ;;; Commentary:
 
-;; 
+;; # Binder #
+
+;; **Warning: this is alpha-level software. Although it does not touch files on
+;; disk, you should consider all binder data (project structure, notes, statuses)
+;; as susceptible to loss. Key bindings, variable and function names, and overall
+;; program design are subject to change.**
+
+;; Binder is collection of interlinked modes to facilitate working on a writing
+;; project in multiple files. It is heavily inspired by the binder feature in the
+;; [macOS writing app Scrivener][scriv].
+
+;; The rational behind working this way is to split a large writing project into
+;; much smaller pieces.
+
+;; [scriv]: https://www.literatureandlatte.com/scrivener/features?os=macOS
+
+;; ## Features ##
+
+;; Primarily, Binder provides a global minor mode binder-mode. This allows
+;; working with files in the current binder data, which is saved in a .binder.el
+;; file in the current directory. (You can change the name of this file is
+;; binder-default-file option.)
+
+;; At this top-level, the main interaction with your binder will be in navigating
+;; back and forth between binder files:
+
+;; - binder-next (bound to C-c ]) visits the next file in the binder, and
+;; - binder-previous (bound to C-c [) visits the previous.
+
+;; Calling these commands activates a transient map so that each command can be
+;; repeated by repeating only the last key.
+
+;; You probably want some idea of the structure of your binder project...
+
+;; - binder-reveal-in-sidebar (bound to C-c ;) will find the current file in
+;;   the binder sidebar (see blow) or call binder-init-binder-file if there is
+;;   none.
+;; - binder-toggle-sidebar (bound to C-c ') toggles the visibility of the
+;;   binder sidebar.
+
+;; And when you're writing and what to add something new, you can with...
+
+;; - binder-add-file (bound to C-c :) prompts for a file-name and add this
+;;   possibly non-existent file to the binder after the current file's index. If no
+;;   file-name extension is provided, use value of the binder's default-extension
+;;   property (set with binder-default-file-extention option).
+
+;; ### Binder Sidebar Mode ###
+
+;; A major mode for displaying the binder sidebar. This is where your main
+;; interaction with the binder happens.
+
+;; Binder items are displayed in a linear ordered list. Calling
+;; binder-sidebar-find-file (bound to RET) or
+;; binder-sidebar-find-file-other-window (bound to o) will visit the
+;; corresponding file.
+
+;; Each item in the binder sidebar displays the following information:
+
+;; 1. binder-sidebar-include-char (default x) denotes that this item has a
+;;    non-nil value for its include property and therefore is included in
+;;    binder-stable-mode (see below).
+;; 2. binder-sidebar-notes-char (default *) denotes that this item has a string
+;;    value for its notes property, which can be edited in binder-notes-mode
+;;    (see below), or
+;; 3. binder-sidebar-missing-char (defautl ?) denote that the item's
+;;    corresponding file cannot be found, but can be relocated by calling
+;;    binder-sidebar-relocate (bound to R).
+;; 4. The item name, either the car of the item element or its display
+;;    property, which can be set by calling binder-sidebar-rename (bound to r).
+;; 5. The item status property value, prefixed with binder-sidebar-status-char
+;;    (default #). The display of this value can be set with the
+;;    binder-sidebar-status-column option.
+
+;; Items can be reordered with binder-sidebar-shift-up (bound to M-p & M-up)
+;; and binder-sidebar-shift-down (bound to M-n & M-down).
+
+;; Each item's include state is toggled with binder-sidebar-toggle-include (bound
+;; to x).
+
+;; Each item can be given a status with binder-sidebar-set-status (bound to #).
+;; Filter item by including or excluding a status with binder-sidebar-filter-in
+;; (bound to /) and binder-sidebar-filter-out (bound to \). To clear a
+;; status, just set an empty string. (n.b. Each command filter in/out only a single
+;; status, therefore it won't make sense to use them in conjunction.)
+
+;; The notes buffer (see below) can be accessed with either
+;; binder-sidebar-open-notes (bound to z) or binder-sidebar-toggle-notes
+;; (bound to i).
+
+;; You can customize how the sidebar window is displayed by setting
+;; binder-sidebar-display-alist option.
+
+;; (There is a "mark" functionality, but this is yet to be implemented beyond just
+;; temporarily making items look marked.)
+
+;; ### Binder Notes Mode ###
+
+;; A major mode for editing binder notes.
+
+;; Notes are only saved to the binder when calling binder-notes-commit (bound to
+;; C-c C-c). Calling quit-window (bound to C-c C-q) or binder-toggle-sidebar
+;; does not save notes.
+
+;; By default, the notes window will update to the corresponding item notes
+;; whenever the cursor moves in the binder sidebar. This may be disconcerting, so
+;; you can change it by setting the binder-notes-keep-in-sync option.
+
+;; If the notes side window feels too small, you can pop the buffer out to a
+;; regular sized window with binder-notes-expand-window (bound to C-c C-l).
+
+;; You can customize how the notes window is displayed by setting
+;; binder-notes-display-alist option.
+
+;; ### Binder Staple Mode ###
+
+;; A minor mode for "stapling" binder files together.
+
+;; When calling binder-sidebar-staple (bound to v), items marked as included in
+;; the binder will be concatenated in a new buffer, separated by
+;; binder-staple-separator string.
+
+;; In this buffer, calling binder-staple-find-original-file (bound to M-RET)
+;; will visit the original file corresponding to the text at point.
+
+;; ## Why not just use Org Mode? ##
+
+;; Org Mode is nice, but it's also a very *heavy* tool that almost insists that
+;; everything be done within Org Mode. I prefer to keep my writing in a collection
+;; of separate text files. It feels easier to open and write in an empty text file
+;; than use headings, narrowing and indirect buffers.
+
+;; ## Requirements ##
+
+;; - Emacs 25.3
+
+;; ## Bugs and Feature Requests ##
+
+;; To report bugs either use <https://github.com/rnkn/binder/issues>.
 
 
 ;;; Code:
@@ -145,8 +287,7 @@ Reads from `binder--cache' if valid, or from binder file if not."
                  (string= binder--directory
                           (expand-file-name default-directory))
                  (or (= binder--modification-count 0)
-                     (time-less-p (file-attribute-modification-time
-                                   (file-attributes binder-file))
+                     (time-less-p (nth 5 (file-attributes binder-file))
                                   binder--modification-time)))
       (with-temp-buffer
         (insert-file-contents binder-file)
@@ -290,6 +431,8 @@ Or visit Nth next file if N is negative."
   (binder-next (- n)))
 
 (defun binder-add-file (fileid &optional index)
+  "Add a (possibly non-existent) FILEID to the binder at INDEX.
+If the current file is in the binder, add at INDEX after that one."
   (interactive "FAdd file (extension optional): ")
   (setq fileid (binder-file-relative-to-root fileid))
   (unless (< 0 (string-width fileid))
@@ -298,7 +441,7 @@ Or visit Nth next file if N is negative."
   ;; add the binder's default file extensions.
   (unless (or (directory-name-p fileid)
               (and (string-match "\\.[^.]+\\'" fileid)
-	               (not (= 0 (match-beginning 0)))))
+                   (not (= 0 (match-beginning 0)))))
     (setq fileid
           (concat fileid "." (alist-get 'default-extension (binder-read)))))
   ;; If the file/directory does not exist, create it.
@@ -760,7 +903,7 @@ Unconditionally activates `binder-mode'."
   "Toggle visibility of binder sidebar window."
   (interactive)
   (if (window-live-p (get-buffer-window binder-sidebar-buffer))
-      (delete-windows-on binder-sidebar-buffer)
+      (binder-sidebar-delete-windows)
     (binder-sidebar-create-window)
     (with-current-buffer binder-sidebar-buffer
       (binder-sidebar-refresh)
