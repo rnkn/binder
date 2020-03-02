@@ -179,7 +179,7 @@
 
 ;; ## Bugs and Feature Requests ##
 
-;; To report bugs either use <https://github.com/rnkn/binder/issues>.
+;; Report bugs and feature requests at: <https://github.com/rnkn/binder/issues>
 
 
 ;;; Code:
