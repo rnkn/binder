@@ -1,10 +1,9 @@
 ;;; binder.el --- Modes for working with a multi-file writing project  -*- lexical-binding: t; -*-
 
-;; Copyright (c) 2020 William Rankin
+;; Copyright (c) 2020  Paul William Rankin
 
 ;; Author: William Rankin <code@william.bydasein.com>
-;; Keywords: files, outlines
-;; Keywords: wp, text
+;; Keywords: files, outlines, wp, text
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "25.3"))
 ;; URL: https://github.com/rnkn/binder
