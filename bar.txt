@@ -1,0 +1,11 @@
+Now try typing C-c [ to go back to the previous file.
+
+Now try C-c [ [ ] ] ] (or some combination thereof). You don't need to prefix C-c each time. Come back here when you're done.
+
+Type C-c ; to get to the sidebar window again, notice the "beginning" and "middle" items are marked with an x -- these are included when you staple files together. Type v.
+
+Congratulations, you've just stapled together some writing! By default, the staple view enables view-mode, because you're not actually looking at the original files.
+
+Type q to quit the staple view.
+
+Go back to the sidebar and type x on the "end" item to include it, then v again.

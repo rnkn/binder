@@ -7,8 +7,11 @@
    (status . "alpha")
    (notes . "Seriously though, am I even gonna use this?"))
   ("README.md"
+   (include)
    (status . "todo"))
-  ("incident.txt")
+  ("incident.txt"
+   (include)
+   (notes . "Story-writing books are particularly concerned with an \"inciting incident\" so make sure yours has one!"))
   ("foo.txt"
    (status . "firstdraft")
    (include . t)
@@ -18,9 +21,12 @@
    (include . t)
    (display . "middle"))
   ("baz.txt"
-   (notes . "You can have flaws, but wow em in the end and you've got a hit.")
-   (status . "firstdraft")
-   (include . t)
-   (display . "end")))
+   (notes . "You can have flaws, but wow 'em in the end and you've got a hit.")
+   (include)
+   (display . "end"))
+  ("akai-ryu.jpg"
+   (include)
+   (status . "image")
+   (notes . "Dionaea muscipula \"Akai Ryu\", Japanese for \"Red Dragon\"\n~ Wikipedia")))
  (default-mode . text-mode)
  (default-extension . "txt"))
