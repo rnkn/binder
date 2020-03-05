@@ -184,6 +184,8 @@
 ;;; Code:
 
 (eval-when-compile (require 'cl-lib))
+(eval-when-compile (require 'subr-x))
+(require 'seq)
 
 (defgroup binder ()
   "Work with a structured project of files."
