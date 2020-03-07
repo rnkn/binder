@@ -270,18 +270,20 @@
 (defvar binder--directory nil)          ; FIXME: does this actually work?
 (defvar binder--modification-time nil)
 (defvar binder--modification-count 0)
+(defvar binder-status-filter-in nil)
+(defvar binder-status-filter-out nil)
 
 
 ;;; Core Functions
 
 (defun binder-root ()
-  "Find the root directory with a binder file."
+  "Return the root directory with a binder file or nil if none."
   (let ((directory
          (locate-dominating-file default-directory binder-default-file)))
     (when (file-directory-p directory) (expand-file-name directory))))
 
 (defun binder-init-binder-file ()
-  "Initialize a binder file."
+  "Initialize an empty binder file."
   (unless (binder-root)
     (when (y-or-n-p (format "Initialize empty %s in %s? " binder-default-file
                             (abbreviate-file-name default-directory)))
@@ -308,6 +310,9 @@ Reads from `binder--cache' if valid, or from binder file if not."
   (let ((binder-file (binder-find-binder-file)))
     (unless binder-file
       (user-error "No binder file found"))
+    ;; The cache is only valid if binder--cache is non-nil, binder--directory is
+    ;; the current default-directory and either we haven't modified binder data,
+    ;; or the binder file is older than binder--modification-time.
     (unless (and binder--cache
                  (string= binder--directory
                           (expand-file-name default-directory))
@@ -342,9 +347,8 @@ Reads from `binder--cache' if valid, or from binder file if not."
 (defun binder-file-relative-to-root (filepath)
   "Return FILEPATH relative to binder root directory."
   (let ((root (binder-root)))
-    (when root
-      (string-trim (expand-file-name filepath)
-                   (expand-file-name root)))))
+    (when root (string-trim (expand-file-name filepath)
+                            (expand-file-name root)))))
 
 (defun binder-get-structure ()
   "Return binder data structure component."
@@ -399,9 +403,6 @@ Reads from `binder--cache' if valid, or from binder file if not."
              (when (and (stringp value) (< 0 (string-width value)))
                value)))
          (binder-get-structure))))
-
-(defvar binder-status-filter-in nil)
-(defvar binder-status-filter-out nil)
 
 (defun binder-filter-structure ()
   (let ((structure (binder-get-structure)))
