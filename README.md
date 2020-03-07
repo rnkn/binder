@@ -157,4 +157,7 @@ large file with headings and use indirect buffers with narrowing.
 
 Report bugs and feature requests at: <https://github.com/rnkn/binder/issues>
 
+## Start Here ##
 
+This file is part of a sample binder project. Enabled `binder-mode` and type `C-c ;`
+to reveal this file in the binder siderbar.
