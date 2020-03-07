@@ -696,11 +696,6 @@ Defaults to current directory."
                (when binder-sidebar-persistent-window
                  (list '(window-parameters (no-delete-other-windows . t)))))))))
 
-(defun binder-sidebar-delete-windows ()
-  "Delete binder sidebar notes windows."
-  (delete-windows-on binder-notes-buffer)
-  (delete-windows-on binder-sidebar-buffer))
-
 (defun binder-sidebar-get-fileid ()
   "Return fileid for item at point."
   (save-excursion
