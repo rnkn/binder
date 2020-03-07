@@ -506,6 +506,7 @@ If the current file is in the binder, add at INDEX after that one."
 (define-key binder-mode-map (kbd "C-c [") #'binder-previous)
 (define-key binder-mode-map (kbd "C-c ;") #'binder-reveal-in-sidebar)
 (define-key binder-mode-map (kbd "C-c '") #'binder-toggle-sidebar)
+(define-key binder-mode-map (kbd "C-c \"") #'binder-toggle-notes)
 (define-key binder-mode-map (kbd "C-c :") #'binder-add-file)
 
 ;;;###autoload
@@ -939,7 +940,7 @@ Unconditionally activates `binder-mode'."
   special-mode "Binder Sidebar"
   "Major mode for working with `binder' projects."
   (binder-sidebar-refresh)
-  (add-hook 'post-command-hook 'binder-notes-refresh-maybe t t))
+  (add-hook 'post-command-hook 'binder-sidebar-sync-notes t t))
 
 (define-key binder-sidebar-mode-map (kbd "g") #'binder-sidebar-refresh)
 (define-key binder-sidebar-mode-map (kbd "n") #'next-line)
@@ -1007,60 +1008,95 @@ Use `binder-toggle-notes' or `quit-window' to close notes."
   :safe 'booleanp
   :group 'binder-sidebar)
 
+(defcustom binder-notes-mode-hook
+  '(visual-line-mode)
+  "Hook run after entering Binder Notes Mode."
+  :type 'hook
+  :options '(visual-line-mode))
+
 (defvar binder--notes-fileid nil)
 (defvar binder--notes-display nil)
 
-(defun binder-notes-set-notes ()
-  (binder-set-item-prop binder--notes-fileid 'notes
-                        (string-trim (buffer-substring-no-properties
-                                      (point-min) (point-max))))
-  (set-buffer-modified-p nil))
+(defun binder-notes-refresh ()
+  (when (window-live-p (get-buffer-window binder-notes-buffer))
+    (with-current-buffer binder-notes-buffer
+      (with-silent-modifications
+        (erase-buffer)
+        (insert (or (binder-get-item-prop binder--notes-fileid 'notes)
+                    ""))
+        (setq binder--notes-display
+              (binder-get-item-prop binder--notes-fileid 'display))))))
 
-(defun binder-notes-get-notes (directory fileid)
-  (setq default-directory directory
-        binder--notes-fileid fileid)
-  (with-silent-modifications
-    (erase-buffer)
-    (insert (or (binder-get-item-prop binder--notes-fileid 'notes)
-            "")))
-  (setq binder--notes-display
-        (binder-get-item-prop binder--notes-fileid 'display)))
+(defun binder-notes-create-buffer (directory)
+  (with-current-buffer (get-buffer-create binder-notes-buffer)
+    (setq default-directory directory)
+    (binder-notes-refresh)
+    (binder-notes-mode)
+    (current-buffer)))
 
-(defun binder-sidebar-toggle-notes (&optional show select)
+(defun binder-notes-create-window (&optional directory)
+  (let ((filepath (or (buffer-file-name)
+                      (expand-file-name default-directory)))
+        (root (binder-root)))
+    (unless (string= filepath root)
+      (cond ((eq major-mode 'binder-sidebar-mode)
+             (setq binder--notes-fileid (binder-sidebar-get-fileid)))
+            (root
+             (setq binder--notes-fileid
+                   (binder-file-relative-to-root filepath))))))
+  (let ((display-buffer-mark-dedicated t))
+    (with-current-buffer (binder-notes-create-buffer
+                          (or directory (expand-file-name default-directory)))
+      (setq header-line-format
+            '((:propertize (or binder--notes-display binder--notes-fileid)
+                           face bold)
+              "  C-c C-c to commit; C-c C-q to quit"))
+      (display-buffer-in-side-window
+       (current-buffer)
+       (append binder-notes-display-alist
+               (when binder-sidebar-persistent-window
+                 (list '(window-parameters (no-delete-other-windows . t)))))))))
+
+(defun binder-show-notes (&optional select)
+  (unless (window-live-p (get-buffer-window binder-notes-buffer))
+    (binder-notes-create-window default-directory))
+  (with-current-buffer binder-notes-buffer
+    (when select (select-window (get-buffer-window)))))
+
+(defun binder-toggle-notes (&optional select)
+  "Toggle visibility of binder notes window."
   (interactive)
-  (let ((display-buffer-mark-dedicated t)
-        (directory (expand-file-name default-directory))
-        (fileid (binder-sidebar-get-fileid)))
-    (with-current-buffer (get-buffer-create binder-notes-buffer)
-      (if (get-buffer-window)
-          (if show (binder-notes-get-notes directory fileid)
-            (delete-windows-on))
-        (binder-notes-mode)
-        (binder-notes-get-notes directory fileid)
-        (display-buffer-in-side-window
-         (current-buffer)
-         (append binder-notes-display-alist
-                 (when binder-sidebar-persistent
-                   (list '(window-parameters (no-delete-other-windows . t)))))))
-      (when select (select-window (get-buffer-window))))))
+  (if (window-live-p (get-buffer-window binder-notes-buffer))
+      (delete-windows-on binder-notes-buffer)
+    (binder-show-notes select)))
+
+(defalias 'binder-sidebar-toggle-notes 'binder-toggle-notes)
 
 (defun binder-sidebar-open-notes ()
   (interactive)
-  (binder-sidebar-toggle-notes t t))
+  (binder-show-notes t))
 
-(defun binder-notes-commit ()
+(defun binder-notes-save ()
   (interactive)
   (unless (derived-mode-p 'binder-notes-mode)
     (user-error "Not in %S" 'binder-notes-mode))
   (if (not (buffer-modified-p))
       (message "(No changes need to be added to binder)")
-    (binder-notes-set-notes)
+    (binder-set-item-prop binder--notes-fileid 'notes
+                          (string-trim (buffer-substring-no-properties
+                                        (point-min) (point-max))))
+    (set-buffer-modified-p nil)
     (binder-write)
     (when (window-live-p (get-buffer-window binder-sidebar-buffer))
       (with-current-buffer binder-sidebar-buffer
         (binder-sidebar-refresh)))
     (message "Saved notes for %s to binder"
              (or binder--notes-display binder--notes-fileid))))
+
+(defun binder-notes-save-and-quit-window ()
+  (interactive)
+  (binder-notes-save)
+  (quit-window))
 
 (defun binder-notes-expand-window ()
   (interactive)
@@ -1073,37 +1109,24 @@ Use `binder-toggle-notes' or `quit-window' to close notes."
     (quit-window)
     (binder-sidebar-open-notes)))
 
-(defun binder-notes-refresh-maybe ()
+(defun binder-sidebar-sync-notes ()
   (while-no-input
     (redisplay)
-    (when (and binder-notes-keep-in-sync
-               (window-live-p (get-buffer-window binder-notes-buffer))
-      (let ((directory (expand-file-name default-directory))
-            (fileid (binder-sidebar-get-fileid)))
-        (with-current-buffer binder-notes-buffer
-          (binder-notes-get-notes directory fileid)))))))
-
-(defcustom binder-notes-mode-hook
-  '(visual-line-mode)
-  "Hook run after entering Binder Notes Mode."
-  :type 'hook
-  :options '(visual-line-mode))
+    (when binder-notes-keep-in-sync
+      (setq binder--notes-fileid (binder-sidebar-get-fileid))
+      (binder-notes-refresh))))
 
 ;;;###autoload
 (define-derived-mode binder-notes-mode
   text-mode "Binder Notes Mode"
   "Major mode for editing `binder' notes."
-  ;; (setq default-directory
-  ;;       (with-current-buffer binder-sidebar-buffer
-  ;;         default-directory))
-  (setq header-line-format
-        '((:propertize (or binder--notes-display binder--notes-fileid)
-                       face bold)
-          "  C-c C-c to commit; C-c C-q to quit")))
+  (binder-notes-refresh))
 
-(define-key binder-notes-mode-map (kbd "C-c C-c") #'binder-notes-commit)
+(define-key binder-notes-mode-map (kbd "C-c C-c") #'binder-notes-save-and-quit-window)
+(define-key binder-notes-mode-map [remap save-buffer] #'binder-notes-save)
 (define-key binder-notes-mode-map (kbd "C-c C-l") #'binder-notes-expand-window)
 (define-key binder-notes-mode-map (kbd "C-c C-q") #'quit-window)
+(define-key binder-notes-mode-map (kbd "C-c C-k") #'quit-window)
 
 
 ;;; Staple Mode
