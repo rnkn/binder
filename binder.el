@@ -714,24 +714,18 @@ Defaults to current directory."
           (setq found t)
         (forward-line 1)))))
 
-;; FIXME: currently not in use.
-(defun binder-sidebar-highligh-current ()
-  (when (binder-root)
-    (let ((fileid (binder-file-relative-to-root (buffer-file-name)))
-          (sidebar-buffer (get-buffer binder-sidebar-buffer)))
-      (when (buffer-live-p sidebar-buffer)
-        (with-current-buffer sidebar-buffer
-          (binder-sidebar-goto-item fileid)
-          (with-silent-modifications
-            (put-text-property (line-beginning-position) (line-beginning-position 2)
-                               'face 'binder-sidebar-highlight)))))))
-
 (defun binder-sidebar-find-file (arg)
   "Visit binder item at point.
 When ARG is non-nil, visit in new window."
   (interactive "P")
-  (let ((pop-up-windows (or arg binder-sidebar-pop-up-windows)))
-    (find-file (binder-sidebar-get-fileid))))
+  (let ((pop-up-windows (or arg binder-sidebar-pop-up-windows))
+        (fileid (binder-sidebar-get-fileid))
+        filepath)
+    (setq filepath (expand-file-name fileid))
+    (when (file-exists-p filepath)
+      (setq binder--current-fileid fileid)
+      (binder-sidebar-refresh)
+      (find-file filepath))))
 
 (defun binder-sidebar-find-file-other-window ()
   "Visit binder item in other window."
@@ -1145,7 +1139,7 @@ This is for \"stapling\" together multiple binder files."
         (erase-buffer)
         (dolist (item item-list)
           (let ((x (point)))
-            (insert-file-contents (car item))
+            (insert-file-contents (expand-file-name (car item) root))
             (goto-char (point-max))
             (insert binder-staple-separator)
             (put-text-property x (point) 'binder-original-file
