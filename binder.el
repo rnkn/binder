@@ -591,7 +591,7 @@ See `display-buffer-in-side-window' for example options."
   :group 'binder-sidebar)
 
 (defcustom binder-sidebar-select-window
-  t
+  nil
   "If non-nil, switch to binder sidebar upon displaying it."
   :type 'boolean
   :safe 'booleanp
