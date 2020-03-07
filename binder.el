@@ -741,7 +741,7 @@ When ARG is non-nil, visit in new window."
 
 (defun binder-sidebar-get-index ()
   "Return binder index position at point."
-  (if (eobp) (length (binder-get-structure))
+  (if (eobp) (1- (length (binder-get-structure)))
     (binder-get-item-index (binder-sidebar-get-fileid))))
 
 (defun binder-sidebar-mark ()
