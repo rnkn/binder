@@ -274,8 +274,9 @@
 
 (defun binder-root ()
   "Find the root directory with a binder file."
-  (expand-file-name (locate-dominating-file
-                     default-directory binder-default-file)))
+  (let ((directory
+         (locate-dominating-file default-directory binder-default-file)))
+    (when (file-directory-p directory) (expand-file-name directory))))
 
 (defun binder-init-binder-file ()
   "Initialize a binder file."
@@ -296,8 +297,7 @@
 (defun binder-find-binder-file ()
   "Find or initialize current binder file."
   (let ((binder-file (expand-file-name binder-default-file (binder-root))))
-    (if (file-readable-p binder-file)
-        binder-file
+    (if (file-exists-p binder-file) binder-file
       (binder-init-binder-file))))
 
 (defun binder-read ()
