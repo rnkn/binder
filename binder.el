@@ -280,7 +280,8 @@
   "Return the root directory with a binder file or nil if none."
   (let ((directory
          (locate-dominating-file default-directory binder-default-file)))
-    (when (file-directory-p directory) (expand-file-name directory))))
+    (when (and directory (file-directory-p directory))
+      (expand-file-name directory))))
 
 (defun binder-init-binder-file ()
   "Initialize an empty binder file."
@@ -427,9 +428,8 @@ Reads from `binder--cache' if valid, or from binder file if not."
 
 (defun binder-get-buffer-fileid ()
   "Return buffer binder fileid."
-  (binder-file-relative-to-root
-   (or (buffer-file-name)
-       (expand-file-name default-directory))))
+  (binder-file-relative-to-root (or (buffer-file-name)
+                                    (expand-file-name default-directory))))
 
 (defun binder-next (&optional n)
   "Visit Nth next file in binder.
