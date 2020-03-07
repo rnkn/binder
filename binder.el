@@ -953,6 +953,7 @@ Unconditionally activates `binder-mode'."
 (define-key binder-sidebar-mode-map (kbd "RET") #'binder-sidebar-find-file)
 (define-key binder-sidebar-mode-map (kbd "o") #'binder-sidebar-find-file-other-window)
 (define-key binder-sidebar-mode-map (kbd "s") #'binder-sidebar-save)
+(define-key binder-sidebar-mode-map [remap save-buffer] #'binder-sidebar-save)
 (define-key binder-sidebar-mode-map (kbd "m") #'binder-sidebar-mark)
 (define-key binder-sidebar-mode-map (kbd "u") #'binder-sidebar-unmark)
 (define-key binder-sidebar-mode-map (kbd "#") #'binder-sidebar-set-status)
