@@ -608,74 +608,79 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   :safe 'booleanp
   :group 'binder-sidebar)
 
+(defvar binder--current-fileid nil)
 (defvar binder--sidebar-marked nil)
-(defvar binder--sidebar-narrowing-status nil)
 
 (defun binder-sidebar-refresh ()
   "Redraw binder sidebar, reading from cache."
   (interactive)
-  (with-silent-modifications
-    (let ((x (point)))
-      (erase-buffer)
-      (dolist (item (binder-filter-structure))
-        (let ((fileid (car item))
-              (include (alist-get 'include item))
-              (display (alist-get 'display item))
-              (notes (alist-get 'notes item))
-              (status (alist-get 'status item))
-              marked missing status-overwrite)
-          ;; Set whether FILEID is MARKED and MISSING.
-          (when (member fileid binder--sidebar-marked)
-            (setq marked t))
-          (when (not (file-exists-p fileid))
-            (setq missing t))
-          ;; Insert the item line elements.
-          (insert (cond (marked ">")
-                        (include binder-sidebar-include-char)
-                        (t " "))
-                  " "
-                  (cond (missing binder-sidebar-missing-char)
-                        ((and notes (not (string-empty-p notes)))
-                         binder-sidebar-notes-char)
-                        (t " "))
-                  " "
-                  ;; Use either DISPLAY, or if directory ensure a
-                  ;; trailing slash, and finally if we're hiding file
-                  ;; extensions, do that, otherwise just the FILEID is
-                  ;; fine.
-                  (or display
-                      (if (file-directory-p fileid)
-                          (replace-regexp-in-string "/*$" "/" fileid)
-                        (if binder-sidebar-hide-file-extensions
-                            (replace-regexp-in-string ".+\\(\\..+\\)" ""
-                                                      fileid nil nil 1)
-                          fileid))))
-          ;; Add the face properties. Make them front-sticky since we
-          ;; were previously editing the buffer text (but not anymore).
-          (put-text-property (line-beginning-position) (line-end-position)
-                             'binder-fileid fileid)
-          (put-text-property (line-beginning-position) (line-end-position)
-                             'front-sticky '(binder-fileid))
-          (when missing
-            (put-text-property (line-beginning-position) (line-end-position)
-                               'face 'binder-sidebar-missing))
-          (when marked
-            (put-text-property (line-beginning-position) (line-end-position)
-                               'face 'binder-sidebar-marked))
-          ;; Add the item STATUS with a hashtag, because hashtags are
-          ;; cool, right?
-          (when (and status (< 0 (string-width status)))
-            (move-to-column binder-sidebar-status-column)
-            (unless (eolp) (setq status-overwrite t))
-            (indent-to-column binder-sidebar-status-column)
-            (let ((x (1- (point))))
-              (delete-region x (line-end-position))
-              (insert (if status-overwrite "~" " ")
-                      binder-sidebar-status-char status)
-              (put-text-property x (line-end-position)
-                                 'face 'binder-sidebar-status)))
-          (insert "\n")))
-      (goto-char x))))
+  (when (window-live-p (get-buffer-window binder-sidebar-buffer))
+    (with-current-buffer binder-sidebar-buffer
+      (with-silent-modifications
+        (let ((x (point)))
+          (erase-buffer)
+          (dolist (item (binder-filter-structure))
+            (let ((fileid (car item))
+                  (include (alist-get 'include item))
+                  (display (alist-get 'display item))
+                  (notes (alist-get 'notes item))
+                  (status (alist-get 'status item))
+                  marked missing status-overwrite)
+              ;; Set whether FILEID is MARKED and MISSING.
+              (when (member fileid binder--sidebar-marked)
+                (setq marked t))
+              (when (not (file-exists-p fileid))
+                (setq missing t))
+              ;; Insert the item line elements.
+              (insert (cond (marked ">")
+                            (include binder-sidebar-include-char)
+                            (t " "))
+                      " "
+                      (cond (missing binder-sidebar-missing-char)
+                            ((and notes (not (string-empty-p notes)))
+                             binder-sidebar-notes-char)
+                            (t " "))
+                      " "
+                      ;; Use either DISPLAY, or if directory ensure a
+                      ;; trailing slash, and finally if we're hiding file
+                      ;; extensions, do that, otherwise just the FILEID is
+                      ;; fine.
+                      (or display
+                          (if (file-directory-p fileid)
+                              (replace-regexp-in-string "/*$" "/" fileid)
+                            (if binder-sidebar-hide-file-extensions
+                                (replace-regexp-in-string ".+\\(\\..+\\)" ""
+                                                          fileid nil nil 1)
+                              fileid))))
+              ;; Add the face properties. Make them front-sticky since we
+              ;; were previously editing the buffer text (but not anymore).
+              (put-text-property (line-beginning-position) (line-end-position)
+                                 'binder-fileid fileid)
+              (put-text-property (line-beginning-position) (line-end-position)
+                                 'front-sticky '(binder-fileid))
+              (when missing
+                (put-text-property (line-beginning-position) (line-end-position)
+                                   'face 'binder-sidebar-missing))
+              (when marked
+                (put-text-property (line-beginning-position) (line-end-position)
+                                   'face 'binder-sidebar-marked))
+              ;; Add the item STATUS with a hashtag, because hashtags are
+              ;; cool, right?
+              (when (and status (< 0 (string-width status)))
+                (move-to-column binder-sidebar-status-column)
+                (unless (eolp) (setq status-overwrite t))
+                (indent-to-column binder-sidebar-status-column)
+                (let ((x (1- (point))))
+                  (delete-region x (line-end-position))
+                  (insert (if status-overwrite "~" " ")
+                          binder-sidebar-status-char status)
+                  (put-text-property x (line-end-position)
+                                     'face 'binder-sidebar-status)))
+              (insert "\n")
+              (when (string= fileid binder--current-fileid)
+                (put-text-property (line-beginning-position 0) (line-beginning-position)
+                                   'face 'binder-sidebar-highlight))))
+          (goto-char x))))))
 
 (defun binder-sidebar-create-buffer (directory)
   "Return binder sidebar buffer for DIRECTORY."
