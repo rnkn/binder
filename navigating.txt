@@ -1,0 +1,5 @@
+Now try typing C-c [ to go back to the previous file.
+
+Now try C-c [ [ ] ] ] (or some combination thereof). You don't need to prefix
+C-c each time. Come back here when you're done. The highlight in the sidebar
+lets you know where you are so you don't get lost.

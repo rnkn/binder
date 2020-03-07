@@ -1,0 +1,9 @@
+Now type C-c ; to go back to the sidebar and z to open its notes. Add or change
+the notes and type C-c C-c or C-x C-s. To quit the notes window without saving,
+type either C-c C-q or C-c C-k.
+
+You can toggle the notes window without selecting it by pressing i.
+
+To really mix things up, open the notes window again and, with it selected, type
+C-c C-l. This pops the window out to be a regular window (instead of a
+side-window). This works as a toggle.
