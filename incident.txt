@@ -1,1 +1,0 @@
-This is the inciting incident. In this case, it's when you downloaded this Emacs Lisp program. Okay, whatever.

@@ -1,0 +1,9 @@
+First enable binder-mode with M-x binder-mode.
+
+Now type C-c ; to reveal this file in the sidebar. See that although the
+filename is start-here.txt it is displayed as "foo". You can change the display
+name of a binder item with r.
+
+Type q in the sidebar to quit the window.
+
+Type C-c ] to go to the next file.

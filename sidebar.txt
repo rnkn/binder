@@ -1,0 +1,11 @@
+Type C-c ' to toggle the sidebar. Unlike C-c ; this does not select the sidebar,
+but you can change this by setting binder-sidebar-select-window.
+
+Type C-x 2 to split this window, and C-x 1 to delete-other-windows. Notice the
+sidebar is still there? It's persistent that way. It needs to be quit explicitly
+by selecting and typing q or C-c ' to toggle.
+
+You can make the sidebar not persistent by setting
+binder-sidebar-persistent-window.
+
+Type C-c ] to go to the next file.
