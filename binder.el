@@ -913,6 +913,7 @@ When ARG is non-nil, do not prompt for confirmation."
 Unconditionally activates `binder-mode'."
   (interactive)
   (binder-mode t)
+  (binder-init-binder-file)
   (let ((filepath (or (buffer-file-name)
                       (expand-file-name default-directory)))
         (root (binder-root)))
@@ -933,8 +934,8 @@ Unconditionally activates `binder-mode'."
 (defun binder-toggle-sidebar ()
   "Toggle visibility of binder sidebar window."
   (interactive)
-  ;; FIXME: better to remember state of notes buffer window, maybe with non-nil
-  ;; value of binder--notes-fileid, or toggle notes window independently.
+  (binder-mode t)
+  (binder-init-binder-file)
   (if (window-live-p (get-buffer-window binder-sidebar-buffer))
       (delete-windows-on binder-sidebar-buffer)
     (binder-sidebar-create-window)
