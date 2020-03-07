@@ -597,7 +597,7 @@ See `display-buffer-in-side-window' for example options."
   :safe 'booleanp
   :group 'binder-sidebar)
 
-(defcustom binder-sidebar-persistent
+(defcustom binder-sidebar-persistent-window
   t
   "When non-nil, sidebar will persist when calling `delete-other-windows'.
 
@@ -693,7 +693,7 @@ Defaults to current directory."
       (display-buffer-in-side-window
        (current-buffer)
        (append binder-sidebar-display-alist
-               (when binder-sidebar-persistent
+               (when binder-sidebar-persistent-window
                  (list '(window-parameters (no-delete-other-windows . t)))))))))
 
 (defun binder-sidebar-delete-windows ()
@@ -993,6 +993,17 @@ Unconditionally activates `binder-mode'."
 
 See `display-buffer-in-side-window' for example options."
   :type 'alist
+  :group 'binder-sidebar)
+
+(defcustom binder-notes-persistent-window
+  t
+  "When non-nil, notes will persist when calling `delete-other-windows'.
+
+This marks `no-delete-other-windows' window parameter as non-nil.
+
+Use `binder-toggle-notes' or `quit-window' to close notes."
+  :type 'boolean
+  :safe 'booleanp
   :group 'binder-sidebar)
 
 (defcustom binder-notes-keep-in-sync
