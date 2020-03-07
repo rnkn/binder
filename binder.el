@@ -844,7 +844,7 @@ When ARG is non-nil, do not prompt for confirmation."
 (defun binder-sidebar-set-status (status)
   "Set the status of binder item at point to STATUS."
   (interactive
-   (list (completing-read-default
+   (list (completing-read
           "Status: " (binder-get-prop-list 'status)
           nil nil (binder-get-item-prop (binder-sidebar-get-fileid) 'status))))
   (binder-set-item-prop (binder-sidebar-get-fileid) 'status status)
@@ -888,7 +888,7 @@ When ARG is non-nil, do not prompt for confirmation."
 (defun binder-sidebar-filter-in (status)
   "Filter items to only include items with STATUS."
   (interactive
-   (list (completing-read-default
+   (list (completing-read
           "Filter in status: " (binder-get-prop-list 'status))))
   (setq binder-status-filter-in
         (if (string-empty-p status) nil status))
@@ -897,7 +897,7 @@ When ARG is non-nil, do not prompt for confirmation."
 (defun binder-sidebar-filter-out (status)
   "Filter items to exclude items with STATUS."
   (interactive
-   (list (completing-read-default
+   (list (completing-read
           "Filter out status: " (binder-get-prop-list 'status))))
   (setq binder-status-filter-out
         (if (string-empty-p status) nil status))
