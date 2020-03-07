@@ -913,22 +913,27 @@ Unconditionally activates `binder-mode'."
   (let ((filepath (or (buffer-file-name)
                       (expand-file-name default-directory)))
         (root (binder-root)))
-    (select-window (binder-sidebar-create-window (binder-root)))
+    (select-window (binder-sidebar-create-window root))
     (unless (string= filepath root)
-      (setq fileid (binder-file-relative-to-root filepath))
-      (if (binder-get-item fileid)
-          (binder-sidebar-goto-item fileid)
-        (when (y-or-n-p (format "Add %s to binder? " fileid))
-          (binder-sidebar-add-file fileid)
-          (binder-sidebar-refresh)
-          (binder-sidebar-goto-item fileid))))))
+      (let ((fileid (binder-file-relative-to-root filepath)))
+        (setq binder--current-fileid fileid)
+        (if (binder-get-item fileid)
+            (progn
+              (binder-sidebar-refresh)
+              (binder-sidebar-goto-item fileid))
+          (when (y-or-n-p (format "Add %s to binder? " fileid))
+            (binder-sidebar-add-file fileid)
+            (binder-sidebar-refresh)
+            (binder-sidebar-goto-item fileid)))))))
 
 ;;;###autoload
 (defun binder-toggle-sidebar ()
   "Toggle visibility of binder sidebar window."
   (interactive)
+  ;; FIXME: better to remember state of notes buffer window, maybe with non-nil
+  ;; value of binder--notes-fileid, or toggle notes window independently.
   (if (window-live-p (get-buffer-window binder-sidebar-buffer))
-      (binder-sidebar-delete-windows)
+      (delete-windows-on binder-sidebar-buffer)
     (binder-sidebar-create-window)
     (with-current-buffer binder-sidebar-buffer
       (binder-sidebar-refresh)
