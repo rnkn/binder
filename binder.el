@@ -420,15 +420,20 @@ Reads from `binder--cache' if valid, or from binder file if not."
 
 ;;; Global Minor Mode
 
+(defvar binder-mode-map (make-sparse-keymap))
+
+(defun binder-get-buffer-fileid ()
+  "Return buffer binder fileid."
+  (binder-file-relative-to-root
+   (or (buffer-file-name)
+       (expand-file-name default-directory))))
+
 (defun binder-next (&optional n)
   "Visit Nth next file in binder.
 Or visit Nth previous file if N is negative."
   (interactive "p")
   ;; Find the current file/directory fileid, if one.
-  (let ((this-fileid
-         (binder-file-relative-to-root
-          (or (buffer-file-name)
-              (expand-file-name default-directory))))
+  (let ((this-fileid (binder-get-buffer-fileid))
         (structure (binder-filter-structure))
         index next-index)
     ;; If current file has an INDEX, get the NEXT-INDEX.
@@ -436,10 +441,14 @@ Or visit Nth previous file if N is negative."
           next-index (+ index n))
     ;; If NEXT-INDEX is within the filtered structure length, find the
     ;; Nth next/previous file.
-    (if (<= 0 next-index (1- (length structure)))
-        (find-file-existing
-         (expand-file-name (car (nth next-index structure)) (binder-root)))
-      (message "End of binder"))
+    (if (not (<= 0 next-index (1- (length structure))))
+        (message "End of binder")
+      (find-file-existing
+       (expand-file-name (car (nth next-index structure)) (binder-root)))
+      (setq binder--current-fileid (binder-get-buffer-fileid))
+      (binder-sidebar-refresh)
+      (setq binder--notes-fileid binder--current-fileid)
+      (binder-notes-refresh))
     ;; Setup the overriding keymap.
     (unless overriding-terminal-local-map
       (let ((keys (substring (this-single-command-keys) 0 -1))
@@ -478,9 +487,7 @@ If the current file is in the binder, add at INDEX after that one."
     (unless (binder-get-item fileid)
       (unless index
         (let ((this-file-index
-               (binder-get-item-index (binder-file-relative-to-root
-                    (or (buffer-file-name)
-                        (expand-file-name default-directory))))))
+               (binder-get-item-index (binder-get-buffer-fileid))))
           (setq index (if this-file-index
                           (1+ this-file-index)
                         (length (binder-get-structure))))))
@@ -494,8 +501,6 @@ If the current file is in the binder, add at INDEX after that one."
     ;; Finally, visit the file FILEPATH.
     (let ((pop-up-windows binder-sidebar-pop-up-windows))
       (find-file filepath))))
-
-(defvar binder-mode-map (make-sparse-keymap))
 
 (define-key binder-mode-map (kbd "C-c ]") #'binder-next)
 (define-key binder-mode-map (kbd "C-c [") #'binder-previous)
