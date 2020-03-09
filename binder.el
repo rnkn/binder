@@ -698,7 +698,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
 Defaults to current directory."
   (let ((display-buffer-mark-dedicated t))
     (with-current-buffer (binder-sidebar-create-buffer
-                          (or directory (expand-file-name default-directory)))
+                          (or directory (binder-root)))
       (display-buffer-in-side-window
        (current-buffer)
        (append binder-sidebar-display-alist
