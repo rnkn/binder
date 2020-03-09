@@ -315,8 +315,7 @@ Reads from `binder--cache' if valid, or from binder file if not."
     ;; the current default-directory and either we haven't modified binder data,
     ;; or the binder file is older than binder--modification-time.
     (unless (and binder--cache
-                 (string= binder--directory
-                          (expand-file-name default-directory))
+                 (string= binder--directory (binder-root))
                  (or (= binder--modification-count 0)
                      (time-less-p (nth 5 (file-attributes binder-file))
                                   binder--modification-time)))
@@ -1069,7 +1068,7 @@ Use `binder-toggle-notes' or `quit-window' to close notes."
 
 (defun binder-show-notes (&optional select)
   (unless (window-live-p (get-buffer-window binder-notes-buffer))
-    (binder-notes-create-window default-directory))
+    (binder-notes-create-window (binder-root)))
   (with-current-buffer binder-notes-buffer
     (when select (select-window (get-buffer-window)))))
 
