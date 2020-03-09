@@ -8,7 +8,7 @@
   ("README.md"
    (include)
    (status . "todo"))
-  ("start-here.txt"
+  ("tutorial/start-here.txt"
    (notes . "This file is going by a pseudonym")
    (status . "start-here")
    (include)
