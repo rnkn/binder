@@ -322,8 +322,9 @@ Reads from `binder--cache' if valid, or from binder file if not."
       (with-temp-buffer
         (insert-file-contents binder-file)
         (goto-char (point-min))
-        (setq binder--cache (read (current-buffer))))))
-  binder--cache)
+        (setq binder--cache (read (current-buffer)))))
+    (setq binder--directory (binder-root))
+  binder--cache))
 
 (defun binder-write ()
   "Write binder data to file."
