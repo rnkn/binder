@@ -448,9 +448,9 @@ Or visit Nth previous file if N is negative."
       (find-file-existing
        (expand-file-name (car (nth next-index structure)) (binder-root)))
       (setq binder--current-fileid (binder-get-buffer-fileid))
-      (binder-sidebar-refresh)
+      (binder-sidebar-refresh-window)
       (setq binder--notes-fileid binder--current-fileid)
-      (binder-notes-refresh))
+      (binder-notes-refresh-window))
     ;; Setup the overriding keymap.
     (unless overriding-terminal-local-map
       (let ((keys (substring (this-single-command-keys) 0 -1))
@@ -496,10 +496,7 @@ If the current file is in the binder, add at INDEX after that one."
       (binder-insert-item fileid index))
     (binder-write-maybe)
     ;; When binder sidebar is active, refresh it.
-    (when (window-live-p (get-buffer-window binder-sidebar-buffer))
-      (with-current-buffer binder-sidebar-buffer
-        (binder-sidebar-refresh)
-        (binder-sidebar-goto-item fileid)))
+    (binder-sidebar-refresh-window)
     ;; Finally, visit the file FILEPATH.
     (let ((pop-up-windows binder-sidebar-pop-up-windows))
       (find-file filepath))))
@@ -617,75 +614,78 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
 (defun binder-sidebar-refresh ()
   "Redraw binder sidebar, reading from cache."
   (interactive)
+  (with-silent-modifications
+    (let ((x (point)))
+      (erase-buffer)
+      (dolist (item (binder-filter-structure))
+        (let ((fileid (car item))
+              (include (alist-get 'include item))
+              (display (alist-get 'display item))
+              (notes (alist-get 'notes item))
+              (status (alist-get 'status item))
+              marked missing status-overwrite)
+          ;; Set whether FILEID is MARKED and MISSING.
+          (when (member fileid binder--sidebar-marked)
+            (setq marked t))
+          (when (not (file-exists-p fileid))
+            (setq missing t))
+          ;; Insert the item line elements.
+          (insert (cond (marked ">")
+                        (include binder-sidebar-include-char)
+                        (t " "))
+                  " "
+                  (cond (missing binder-sidebar-missing-char)
+                        ((and notes (not (string-empty-p notes)))
+                         binder-sidebar-notes-char)
+                        (t " "))
+                  " "
+                  ;; Use either DISPLAY, or if directory ensure a
+                  ;; trailing slash, and finally if we're hiding file
+                  ;; extensions, do that, otherwise just the FILEID is
+                  ;; fine.
+                  (or display
+                      (if (file-directory-p fileid)
+                          (replace-regexp-in-string "/*$" "/" fileid)
+                        (if binder-sidebar-hide-file-extensions
+                            (replace-regexp-in-string ".+\\(\\..+\\)" ""
+                                                      fileid nil nil 1)
+                          fileid))))
+          ;; Add the face properties. Make them front-sticky since we
+          ;; were previously editing the buffer text (but not anymore).
+          (put-text-property (line-beginning-position) (line-end-position)
+                             'binder-fileid fileid)
+          (put-text-property (line-beginning-position) (line-end-position)
+                             'front-sticky '(binder-fileid))
+          (when missing
+            (put-text-property (line-beginning-position) (line-end-position)
+                               'face 'binder-sidebar-missing))
+          (when marked
+            (put-text-property (line-beginning-position) (line-end-position)
+                               'face 'binder-sidebar-marked))
+          ;; Add the item STATUS with a hashtag, because hashtags are
+          ;; cool, right?
+          (when (and status (< 0 (string-width status)))
+            (move-to-column binder-sidebar-status-column)
+            (unless (eolp) (setq status-overwrite t))
+            (indent-to-column binder-sidebar-status-column)
+            (let ((x (1- (point))))
+              (delete-region x (line-end-position))
+              (insert (if status-overwrite "~" " ")
+                      binder-sidebar-status-char status)
+              (put-text-property x (line-end-position)
+                                 'face 'binder-sidebar-status)))
+          (insert "\n")
+          (when (string= fileid binder--current-fileid)
+            (put-text-property (line-beginning-position 0) (line-beginning-position)
+                               'face 'binder-sidebar-highlight))))
+      (goto-char x))))
+
+(defun binder-sidebar-refresh-window ()
   (when (window-live-p (get-buffer-window binder-sidebar-buffer))
     (with-current-buffer binder-sidebar-buffer
-      (with-silent-modifications
-        (let ((x (point)))
-          (erase-buffer)
-          (dolist (item (binder-filter-structure))
-            (let ((fileid (car item))
-                  (include (alist-get 'include item))
-                  (display (alist-get 'display item))
-                  (notes (alist-get 'notes item))
-                  (status (alist-get 'status item))
-                  marked missing status-overwrite)
-              ;; Set whether FILEID is MARKED and MISSING.
-              (when (member fileid binder--sidebar-marked)
-                (setq marked t))
-              (when (not (file-exists-p fileid))
-                (setq missing t))
-              ;; Insert the item line elements.
-              (insert (cond (marked ">")
-                            (include binder-sidebar-include-char)
-                            (t " "))
-                      " "
-                      (cond (missing binder-sidebar-missing-char)
-                            ((and notes (not (string-empty-p notes)))
-                             binder-sidebar-notes-char)
-                            (t " "))
-                      " "
-                      ;; Use either DISPLAY, or if directory ensure a
-                      ;; trailing slash, and finally if we're hiding file
-                      ;; extensions, do that, otherwise just the FILEID is
-                      ;; fine.
-                      (or display
-                          (if (file-directory-p fileid)
-                              (replace-regexp-in-string "/*$" "/" fileid)
-                            (if binder-sidebar-hide-file-extensions
-                                (replace-regexp-in-string ".+\\(\\..+\\)" ""
-                                                          fileid nil nil 1)
-                              fileid))))
-              ;; Add the face properties. Make them front-sticky since we
-              ;; were previously editing the buffer text (but not anymore).
-              (put-text-property (line-beginning-position) (line-end-position)
-                                 'binder-fileid fileid)
-              (put-text-property (line-beginning-position) (line-end-position)
-                                 'front-sticky '(binder-fileid))
-              (when missing
-                (put-text-property (line-beginning-position) (line-end-position)
-                                   'face 'binder-sidebar-missing))
-              (when marked
-                (put-text-property (line-beginning-position) (line-end-position)
-                                   'face 'binder-sidebar-marked))
-              ;; Add the item STATUS with a hashtag, because hashtags are
-              ;; cool, right?
-              (when (and status (< 0 (string-width status)))
-                (move-to-column binder-sidebar-status-column)
-                (unless (eolp) (setq status-overwrite t))
-                (indent-to-column binder-sidebar-status-column)
-                (let ((x (1- (point))))
-                  (delete-region x (line-end-position))
-                  (insert (if status-overwrite "~" " ")
-                          binder-sidebar-status-char status)
-                  (put-text-property x (line-end-position)
-                                     'face 'binder-sidebar-status)))
-              (insert "\n")
-              (when (string= fileid binder--current-fileid)
-                (put-text-property (line-beginning-position 0) (line-beginning-position)
-                                   'face 'binder-sidebar-highlight))))
-          (goto-char x))))))
+      (binder-sidebar-refresh))))
 
-(defun binder-sidebar-create-buffer (directory)
+(defun binder-sidebar-create-buffer ()
   "Return binder sidebar buffer for DIRECTORY."
   (with-current-buffer (get-buffer-create binder-sidebar-buffer)
     (setq default-directory directory)
@@ -1027,14 +1027,17 @@ Use `binder-toggle-notes' or `quit-window' to close notes."
 (defvar binder--notes-display nil)
 
 (defun binder-notes-refresh ()
+  (with-silent-modifications
+    (erase-buffer)
+    (insert (or (binder-get-item-prop binder--notes-fileid 'notes)
+                ""))
+    (setq binder--notes-display
+          (binder-get-item-prop binder--notes-fileid 'display))))
+
+(defun binder-notes-refresh-window ()
   (when (window-live-p (get-buffer-window binder-notes-buffer))
     (with-current-buffer binder-notes-buffer
-      (with-silent-modifications
-        (erase-buffer)
-        (insert (or (binder-get-item-prop binder--notes-fileid 'notes)
-                    ""))
-        (setq binder--notes-display
-              (binder-get-item-prop binder--notes-fileid 'display))))))
+      (binder-notes-refresh))))
 
 (defun binder-notes-create-buffer (directory)
   (with-current-buffer (get-buffer-create binder-notes-buffer)
@@ -1096,9 +1099,7 @@ Use `binder-toggle-notes' or `quit-window' to close notes."
                                         (point-min) (point-max))))
     (set-buffer-modified-p nil)
     (binder-write)
-    (when (window-live-p (get-buffer-window binder-sidebar-buffer))
-      (with-current-buffer binder-sidebar-buffer
-        (binder-sidebar-refresh)))
+    (binder-sidebar-refresh-window)
     (message "Saved notes for %s to binder"
              (or binder--notes-display binder--notes-fileid))))
 
@@ -1123,7 +1124,7 @@ Use `binder-toggle-notes' or `quit-window' to close notes."
     (redisplay)
     (when binder-notes-keep-in-sync
       (setq binder--notes-fileid (binder-sidebar-get-fileid))
-      (binder-notes-refresh))))
+      (binder-notes-refresh-window))))
 
 ;;;###autoload
 (define-derived-mode binder-notes-mode
