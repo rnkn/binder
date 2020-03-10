@@ -1009,8 +1009,11 @@ Use `binder-toggle-notes' or `quit-window' to close notes."
   :group 'binder-sidebar)
 
 (defcustom binder-notes-keep-in-sync
-  t
-  "If non-nil, moving point in binder sidebar updates notes."
+  nil
+  "If non-nil, moving point in binder sidebar updates notes.
+
+Enabling this can be disconcerting, because notes are not
+automatically saved."
   :type 'boolean
   :safe 'booleanp
   :group 'binder-sidebar)
