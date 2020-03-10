@@ -267,7 +267,7 @@
   "Header information for binder-file.")
 
 (defvar binder--cache nil)
-(defvar binder--directory nil)          ; FIXME: does this actually work?
+(defvar binder--directory nil)
 (defvar binder--modification-time nil)
 (defvar binder--modification-count 0)
 (defvar binder-status-filter-in nil)
@@ -687,6 +687,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
 (defun binder-sidebar-create-buffer ()
   "Return binder sidebar buffer for DIRECTORY."
   (with-current-buffer (get-buffer-create binder-sidebar-buffer)
+    (binder-sidebar-mode)
     (unless (string= default-directory binder--directory)
       (setq binder--cache nil
             default-directory binder--directory))
