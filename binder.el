@@ -687,21 +687,21 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
 (defun binder-sidebar-create-buffer ()
   "Return binder sidebar buffer for DIRECTORY."
   (with-current-buffer (get-buffer-create binder-sidebar-buffer)
-    (setq default-directory directory)
-    (binder-sidebar-mode)
+    (unless (string= default-directory binder--directory)
+      (setq binder--cache nil
+            default-directory binder--directory))
+    (binder-sidebar-refresh)
     (current-buffer)))
 
-(defun binder-sidebar-create-window (&optional directory)
+(defun binder-sidebar-create-window ()
   "Return binder sidebar window for DIRECTORY.
 Defaults to current directory."
   (let ((display-buffer-mark-dedicated t))
-    (with-current-buffer (binder-sidebar-create-buffer
-                          (or directory (binder-root)))
-      (display-buffer-in-side-window
-       (current-buffer)
-       (append binder-sidebar-display-alist
-               (when binder-sidebar-persistent-window
-                 (list '(window-parameters (no-delete-other-windows . t)))))))))
+    (display-buffer-in-side-window
+     (binder-sidebar-create-buffer)
+     (append binder-sidebar-display-alist
+             (when binder-sidebar-persistent-window
+               (list '(window-parameters (no-delete-other-windows . t))))))))
 
 (defun binder-sidebar-get-fileid ()
   "Return fileid for item at point."
@@ -778,6 +778,7 @@ When ARG is non-nil, visit in new window."
     (binder-insert-item fileid (1+ (binder-sidebar-get-index))))
   (setq binder--modification-time (current-time))
   (binder-sidebar-refresh)
+  (binder-sidebar-goto-item fileid)
   (binder-write-maybe))
 
 (defun binder-sidebar-add-all-files ()
@@ -793,7 +794,8 @@ When ARG is non-nil, visit in new window."
   (interactive "FAdd file (extension optional): ")
   (unless (eq major-mode 'binder-sidebar-mode)
     (user-error "Not in %S" 'binder-sidebar-mode))
-  (binder-add-file fileid (1+ (binder-sidebar-get-index))))
+  (binder-add-file fileid (1+ (binder-sidebar-get-index)))
+  (binder-sidebar-goto-item fileid))
 
 (defun binder-sidebar-remove (arg)
   "Remove binder item at point.
@@ -910,43 +912,39 @@ When ARG is non-nil, do not prompt for confirmation."
 
 Unconditionally activates `binder-mode'."
   (interactive)
-  (binder-mode t)
-  (binder-init-binder-file)
+  (binder-mode)
+  (setq binder--directory (binder-root))
   (let ((filepath (or (buffer-file-name)
                       (expand-file-name default-directory)))
         (root (binder-root)))
-    (select-window (binder-sidebar-create-window root))
+    (select-window (binder-sidebar-create-window))
     (unless (string= filepath root)
       (let ((fileid (binder-file-relative-to-root filepath)))
         (setq binder--current-fileid fileid)
-        (if (binder-get-item fileid)
-            (progn
-              (binder-sidebar-refresh)
-              (binder-sidebar-goto-item fileid))
+        (unless (binder-get-item fileid)
           (when (y-or-n-p (format "Add %s to binder? " fileid))
-            (binder-sidebar-add-file fileid)
-            (binder-sidebar-refresh)
-            (binder-sidebar-goto-item fileid)))))))
+            (binder-sidebar-add-file fileid)))
+        (binder-sidebar-refresh)
+        (binder-sidebar-goto-item fileid)))))
 
 ;;;###autoload
 (defun binder-toggle-sidebar ()
-  "Toggle visibility of binder sidebar window."
+  "Toggle visibility of binder sidebar window.
+
+Unconditionally activates `binder-mode'."
   (interactive)
-  (binder-mode t)
-  (binder-init-binder-file)
+  (binder-mode)
   (if (window-live-p (get-buffer-window binder-sidebar-buffer))
       (delete-windows-on binder-sidebar-buffer)
+    (setq binder--directory (binder-root))
     (binder-sidebar-create-window)
-    (with-current-buffer binder-sidebar-buffer
-      (binder-sidebar-refresh)
-      (when binder-sidebar-select-window
-        (select-window (get-buffer-window))))))
+    (when binder-sidebar-select-window
+      (select-window (get-buffer-window binder-sidebar-buffer)))))
 
 ;;;###autoload
 (define-derived-mode binder-sidebar-mode
   special-mode "Binder Sidebar"
   "Major mode for working with `binder' projects."
-  (binder-sidebar-refresh)
   (add-hook 'post-command-hook 'binder-sidebar-sync-notes t t))
 
 (define-key binder-sidebar-mode-map (kbd "g") #'binder-sidebar-refresh)
@@ -1041,7 +1039,6 @@ Use `binder-toggle-notes' or `quit-window' to close notes."
 (defun binder-notes-create-buffer (directory)
   (with-current-buffer (get-buffer-create binder-notes-buffer)
     (setq default-directory directory)
-    (binder-notes-refresh)
     (binder-notes-mode)
     (current-buffer)))
 
