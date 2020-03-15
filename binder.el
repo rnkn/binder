@@ -524,7 +524,6 @@ Or visit Nth previous file if N is negative."
       (find-file-existing
        (expand-file-name (car (nth next-index structure))
                          binder-project-directory))
-      (setq binder--current-fileid (binder-get-buffer-fileid))
       (binder-sidebar-refresh-window)
       (setq binder--notes-fileid binder--current-fileid)
       (binder-notes-refresh-window))
@@ -592,8 +591,11 @@ If the current file is in the binder, add at INDEX after that one."
   :init-value nil
   :lighter binder-mode-lighter
   :global t
-  (unless noninteractive
-    (add-hook 'kill-emacs-hook 'binder-exit-hook)))
+  (if binder-mode
+      (unless noninteractive
+        (add-hook 'kill-emacs-hook 'binder-exit-hook)
+        (add-hook 'window-configuration-change-hook 'binder-highlight-in-sidebar))
+    (remove-hook 'window-configuration-change-hook 'binder-highlight-in-sidebar)))
 
 
 ;;; Sidebar Major Mode
@@ -994,6 +996,16 @@ When ARG is non-nil, do not prompt for confirmation."
   (setq binder-status-filter-out
         (if (string-empty-p status) nil status))
   (binder-sidebar-refresh))
+
+(defun binder-highlight-in-sidebar ()
+  "Highlight the current file in sidebar.
+
+Added to `window-configuration-change-hook'."
+  (unless (or (minibuffer-window-active-p (selected-window))
+              (eq major-mode 'binder-sidebar-mode))
+    (when (window-live-p (get-buffer-window binder-sidebar-buffer))
+      (setq binder--current-fileid (binder-get-buffer-fileid))
+      (binder-sidebar-refresh-window))))
 
 ;;;###autoload
 (defun binder-reveal-in-sidebar ()
