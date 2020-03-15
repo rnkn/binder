@@ -215,6 +215,16 @@
   :safe 'stringp
   :group 'binder)
 
+(defcustom binder-project-directory
+  nil
+  "Directory containing current `binder-default-file' or nil.
+
+The value set here will be used as default, but may be changed at
+any time with `binder-change-directory'."
+  :type '(choice (const nil) directory)
+  :safe 'stringp
+  :group 'binder)
+
 (defcustom binder-default-file-extention
   "txt"
   "Default extension for new binder files."
@@ -269,10 +279,6 @@
 (defvar binder--cache nil)
 (defvar binder--modification-time nil)
 (defvar binder--modification-count 0)
-
-(defvar binder-project-directory nil
-  "Directory containing current `binder-default-file'.")
-
 (defvar binder-status-filter-in nil)
 (defvar binder-status-filter-out nil)
 
@@ -322,7 +328,7 @@ Reads from `binder--cache' if valid, or from binder file if not."
     ;; haven't modified binder data or the binder file is older than
     ;; binder--modification-time.
     (unless (and binder--cache
-                 (string= binder-project-directory (binder-root))
+                 (string= (expand-file-name binder-project-directory) (binder-root))
                  (or (= binder--modification-count 0)
                      (time-less-p (nth 5 (file-attributes binder-file))
                                   binder--modification-time)))
@@ -360,7 +366,7 @@ Reads from `binder--cache' if valid, or from binder file if not."
   (let ((root (binder-root)))
     (cond
      ;; The binder-project-directory matches root, we're all good.
-     ((string= binder-project-directory root)
+     ((string= (expand-file-name binder-project-directory) root)
       t)
      ;; The binder-project-directory does not match project root; offer to
      ;; change it to current project root.
@@ -932,7 +938,6 @@ When ARG is non-nil, do not prompt for confirmation."
           "Status: " (binder-get-prop-list 'status)
           nil nil (binder-get-item-prop (binder-sidebar-get-fileid) 'status))))
   (binder-set-item-prop (binder-sidebar-get-fileid) 'status status)
-  (setq binder--modification-time (current-time))
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
