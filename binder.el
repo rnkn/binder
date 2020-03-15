@@ -467,6 +467,10 @@ Filters in `binder-status-filter-in' or filters out
                structure))))
     structure))
 
+(defun binder-exit-hook ()
+  "Ensure project data is saved on exit."
+  (when binder-mode (binder-save 'prompt)))
+
 
 ;;; Global Minor Mode
 
@@ -578,7 +582,9 @@ If the current file is in the binder, add at INDEX after that one."
   "Globally interact with `binder'."
   :init-value nil
   :lighter binder-mode-lighter
-  :global t)
+  :global t
+  (unless noninteractive
+    (add-hook 'kill-emacs-hook 'binder-exit-hook)))
 
 
 ;;; Sidebar Major Mode
