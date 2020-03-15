@@ -926,23 +926,28 @@ When ARG is non-nil, do not prompt for confirmation."
   (binder-write-maybe))
 
 (defun binder-sidebar-toggle-include ()
-  "Toggle whether binder item at point is included in `binder-sidebar-staple'."
+  "Toggle whether marked items or item at point is included in `binder-sidebar-staple'."
   (interactive)
-  (let ((fileid (binder-sidebar-get-fileid))
-        include)
-    (setq include (not (binder-get-item-prop fileid 'include)))
-    (binder-set-item-prop (binder-sidebar-get-fileid) 'include include))
-  (setq binder--modification-time (current-time))
+  (dolist (fileid (or binder--sidebar-marked
+                      (list (binder-sidebar-get-fileid))))
+    (binder-set-item-prop fileid 'include
+                          (not (binder-get-item-prop fileid 'include))))
+  (binder-sidebar-unmark-all)
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
 (defun binder-sidebar-set-status (status)
-  "Set the status of binder item at point to STATUS."
+  "Set the status of marked items or item at point to STATUS."
   (interactive
    (list (completing-read
           "Status: " (binder-get-prop-list 'status)
-          nil nil (binder-get-item-prop (binder-sidebar-get-fileid) 'status))))
-  (binder-set-item-prop (binder-sidebar-get-fileid) 'status status)
+          nil nil (binder-get-item-prop (or (car binder--sidebar-marked)
+                                            (binder-sidebar-get-fileid))
+                                        'status))))
+  (dolist (fileid (or binder--sidebar-marked
+                      (list (binder-sidebar-get-fileid))))
+    (binder-set-item-prop fileid 'status status))
+  (binder-sidebar-unmark-all)
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
