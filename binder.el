@@ -267,17 +267,20 @@
   "Header information for binder-file.")
 
 (defvar binder--cache nil)
-(defvar binder--directory nil)
 (defvar binder--modification-time nil)
 (defvar binder--modification-count 0)
+
+(defvar binder-project-directory nil
+  "Directory containing current `binder-default-file'.")
+
 (defvar binder-status-filter-in nil)
 (defvar binder-status-filter-out nil)
 
 
-;;; Core Functions
+;;; Core Non-interactive Functions
 
 (defun binder-root ()
-  "Return the root directory with a binder file or nil if none."
+  "Return the root directory with a binder file, or nil."
   (let ((directory
          (locate-dominating-file default-directory binder-default-file)))
     (when (and directory (file-directory-p directory))
@@ -285,11 +288,13 @@
 
 (defun binder-init-binder-file ()
   "Initialize an empty binder file."
-  (unless (binder-root)
-    (when (y-or-n-p (format "Initialize empty %s in %s? " binder-default-file
-                            (abbreviate-file-name default-directory)))
+  (let ((directory
+         (or binder-project-directory default-directory)))
+    (when (y-or-n-p (format "Initialize empty %s in %s? "
+                            binder-default-file
+                            (abbreviate-file-name directory)))
       (let ((binder-file
-             (expand-file-name binder-default-file default-directory)))
+             (expand-file-name binder-default-file directory)))
       (with-temp-buffer
         (insert binder-file-header
                 (pp-to-string
@@ -301,7 +306,8 @@
 
 (defun binder-find-binder-file ()
   "Find or initialize current binder file."
-  (let ((binder-file (expand-file-name binder-default-file (binder-root))))
+  (let ((binder-file
+         (expand-file-name binder-default-file (binder-root))))
     (if (file-exists-p binder-file) binder-file
       (binder-init-binder-file))))
 
@@ -311,24 +317,23 @@ Reads from `binder--cache' if valid, or from binder file if not."
   (let ((binder-file (binder-find-binder-file)))
     (unless binder-file
       (user-error "No binder file found"))
-    ;; The cache is only valid if binder--cache is non-nil, binder--directory is
-    ;; the current default-directory and either we haven't modified binder data,
-    ;; or the binder file is older than binder--modification-time.
+    ;; The cache is only valid if binder--cache is non-nil,
+    ;; binder-project-directory is the current binder-root, and either we
+    ;; haven't modified binder data or the binder file is older than
+    ;; binder--modification-time.
     (unless (and binder--cache
-                 (string= binder--directory (binder-root))
+                 (string= binder-project-directory (binder-root))
                  (or (= binder--modification-count 0)
                      (time-less-p (nth 5 (file-attributes binder-file))
                                   binder--modification-time)))
       (with-temp-buffer
         (insert-file-contents binder-file)
         (goto-char (point-min))
-        (setq binder--cache (read (current-buffer)))))
-    (setq binder--directory (binder-root))
-  binder--cache))
+        (setq binder--cache (read (current-buffer))))))
+  binder--cache)
 
 (defun binder-write ()
   "Write binder data to file."
-  (interactive)
   (mapc (lambda (item)
           (setf item (rassq-delete-all "" item)))
         (binder-get-structure))
@@ -344,11 +349,43 @@ Reads from `binder--cache' if valid, or from binder file if not."
       (cl-incf binder--modification-count)
     (binder-write)))
 
+(defun binder-cd (directory)
+  "Set `binder-project-directory' to DIRECTORY and erase cache."
+  (binder-write)
+  (setq binder-project-directory (expand-file-name directory)
+        binder--cache nil))
+
+(defun binder-ensure-in-project ()
+  (let ((root (binder-root)))
+    (cond
+     ;; The binder-project-directory matches root, we're all good.
+     ((string= binder-project-directory root)
+      t)
+     ;; The binder-project-directory does not match project root; offer to
+     ;; change it to current project root.
+     ((and binder-project-directory root)
+      (when (y-or-n-p (format "Outside of current binder project %s
+Change binder directory to %s?"
+                              (abbreviate-file-name binder-project-directory)
+                              (abbreviate-file-name root)))
+        (binder-cd root)))
+     ;; The binder-project-directory is not set, but we're in a project; offer
+     ;; to set it to current project root.
+     (root
+      (when (y-or-n-p (format "Set binder directory to %s?"
+                              (abbreviate-file-name root)))
+        (binder-cd root)))
+     ;; A fresh project; offer to set project directory to default-directory.
+     (t
+      (when (y-or-n-p (format "Set binder directory to %s?"
+                              (abbreviate-file-name default-directory)))
+        (binder-cd default-directory)
+        (binder-init-binder-file))))))
+
 (defun binder-file-relative-to-root (filepath)
   "Return FILEPATH relative to binder root directory."
-  (let ((root (binder-root)))
-    (when root (string-trim (expand-file-name filepath)
-                            (expand-file-name root)))))
+  (string-trim (expand-file-name filepath)
+               (expand-file-name binder-project-directory)))
 
 (defun binder-get-structure ()
   "Return binder data structure component."
@@ -404,7 +441,16 @@ Reads from `binder--cache' if valid, or from binder file if not."
                value)))
          (binder-get-structure))))
 
+(defun binder-get-buffer-fileid ()
+  "Return buffer binder fileid."
+  (binder-file-relative-to-root
+   (or (buffer-file-name) (expand-file-name default-directory))))
+
 (defun binder-filter-structure ()
+  "Return binder structure filtered by status.
+
+Filters in `binder-status-filter-in' or filters out
+`binder-status-filter-out'."
   (let ((structure (binder-get-structure)))
     (if binder-status-filter-in
         (setq structure
@@ -425,15 +471,29 @@ Reads from `binder--cache' if valid, or from binder file if not."
 
 (defvar binder-mode-map (make-sparse-keymap))
 
-(defun binder-get-buffer-fileid ()
-  "Return buffer binder fileid."
-  (binder-file-relative-to-root (or (buffer-file-name)
-                                    (expand-file-name default-directory))))
+(defun binder-save (&optional prompt)
+  (interactive)
+  (cond ((= 0 binder--modification-count)
+         (message "(No changes need to be saved)"))
+        ((and prompt
+              (y-or-n-p (format "Save binder project %s?"
+                                (abbreviate-file-name binder-project-directory))))
+         (binder-write))
+        (t
+         (binder-write))))
+
+(defun binder-change-directory (directory)
+  "Change to binder project directory DIRECTORY."
+  (interactive "DDirectory: ")
+  (binder-save 'prompt)
+  (binder-cd directory)
+  (binder-sidebar-refresh-window))
 
 (defun binder-next (&optional n)
   "Visit Nth next file in binder.
 Or visit Nth previous file if N is negative."
   (interactive "p")
+  (binder-ensure-in-project)
   ;; Find the current file/directory fileid, if one.
   (let ((this-fileid (binder-get-buffer-fileid))
         (structure (binder-filter-structure))
@@ -446,7 +506,8 @@ Or visit Nth previous file if N is negative."
     (if (not (<= 0 next-index (1- (length structure))))
         (message "End of binder")
       (find-file-existing
-       (expand-file-name (car (nth next-index structure)) (binder-root)))
+       (expand-file-name (car (nth next-index structure))
+                         binder-project-directory))
       (setq binder--current-fileid (binder-get-buffer-fileid))
       (binder-sidebar-refresh-window)
       (setq binder--notes-fileid binder--current-fileid)
@@ -468,6 +529,7 @@ Or visit Nth next file if N is negative."
   "Add a (possibly non-existent) FILEID to the binder at INDEX.
 If the current file is in the binder, add at INDEX after that one."
   (interactive "FAdd file (extension optional): ")
+  (binder-ensure-in-project)
   (setq fileid (binder-file-relative-to-root fileid))
   (unless (< 0 (string-width fileid))
     (user-error "No file name supplied"))
@@ -479,7 +541,7 @@ If the current file is in the binder, add at INDEX after that one."
     (setq fileid
           (concat fileid "." (alist-get 'default-extension (binder-read)))))
   ;; If the file/directory does not exist, create it.
-  (let ((filepath (expand-file-name fileid (binder-root))))
+  (let ((filepath (expand-file-name fileid binder-project-directory)))
     (unless (file-exists-p filepath)
       (if (directory-name-p filepath)
           (make-directory filepath t)
@@ -615,6 +677,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   "Redraw binder sidebar, reading from cache."
   (interactive)
   (with-silent-modifications
+    (setq default-directory binder-project-directory)
     (let ((x (point)))
       (erase-buffer)
       (dolist (item (binder-filter-structure))
@@ -685,13 +748,18 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
     (with-current-buffer binder-sidebar-buffer
       (binder-sidebar-refresh))))
 
+(defun binder-sidebar-force-refresh ()
+  (interactive)
+  (setq binder--cache nil)
+  (binder-sidebar-refresh-window))
+
+(defalias 'binder-sidebar-change-directory 'binder-change-directory)
+
 (defun binder-sidebar-create-buffer ()
   "Return binder sidebar buffer for DIRECTORY."
+  (binder-ensure-in-project)
   (with-current-buffer (get-buffer-create binder-sidebar-buffer)
     (binder-sidebar-mode)
-    (unless (string= default-directory binder--directory)
-      (setq binder--cache nil
-            default-directory binder--directory))
     (binder-sidebar-refresh)
     (current-buffer)))
 
@@ -741,7 +809,7 @@ When ARG is non-nil, visit in new window."
   (interactive)
   (binder-sidebar-find-file t))
 
-(defalias 'binder-sidebar-save 'binder-write)
+(defalias 'binder-sidebar-save 'binder-save)
 
 (defun binder-sidebar-get-index ()
   "Return binder index position at point."
@@ -915,12 +983,12 @@ When ARG is non-nil, do not prompt for confirmation."
 Unconditionally activates `binder-mode'."
   (interactive)
   (binder-mode)
-  (setq binder--directory (binder-root))
   (let ((filepath (or (buffer-file-name)
                       (expand-file-name default-directory)))
         (root (binder-root)))
     (select-window (binder-sidebar-create-window))
-    (unless (string= filepath root)
+    (if (string= filepath root)
+        (binder-sidebar-refresh)
       (let ((fileid (binder-file-relative-to-root filepath)))
         (setq binder--current-fileid fileid)
         (unless (binder-get-item fileid)
@@ -937,8 +1005,7 @@ Unconditionally activates `binder-mode'."
   (interactive)
   (binder-mode)
   (if (window-live-p (get-buffer-window binder-sidebar-buffer))
-      (delete-windows-on binder-sidebar-buffer)
-    (setq binder--directory (binder-root))
+      (delete-window (get-buffer-window binder-sidebar-buffer))
     (binder-sidebar-create-window)
     (when binder-sidebar-select-window
       (select-window (get-buffer-window binder-sidebar-buffer)))))
@@ -950,6 +1017,8 @@ Unconditionally activates `binder-mode'."
   (add-hook 'post-command-hook 'binder-sidebar-sync-notes t t))
 
 (define-key binder-sidebar-mode-map (kbd "g") #'binder-sidebar-refresh)
+(define-key binder-sidebar-mode-map (kbd "G") #'binder-sidebar-force-refresh)
+(define-key binder-sidebar-mode-map (kbd "C") #'binder-sidebar-change-directory)
 (define-key binder-sidebar-mode-map (kbd "n") #'next-line)
 (define-key binder-sidebar-mode-map (kbd "p") #'previous-line)
 (define-key binder-sidebar-mode-map (kbd "RET") #'binder-sidebar-find-file)
@@ -1029,65 +1098,64 @@ automatically saved."
 (defvar binder--notes-display nil)
 
 (defun binder-notes-refresh ()
+  (setq default-directory binder-project-directory)
   (with-silent-modifications
     (erase-buffer)
     (insert (or (binder-get-item-prop binder--notes-fileid 'notes)
                 ""))
     (setq binder--notes-display
-          (binder-get-item-prop binder--notes-fileid 'display))))
+          (binder-get-item-prop binder--notes-fileid 'display)
+          header-line-format
+          (list (list :propertize (or binder--notes-display binder--notes-fileid)
+                      'face 'bold)
+                "  C-c C-c to commit; C-c C-q to quit"))))
 
 (defun binder-notes-refresh-window ()
   (when (window-live-p (get-buffer-window binder-notes-buffer))
     (with-current-buffer binder-notes-buffer
       (binder-notes-refresh))))
 
-(defun binder-notes-create-buffer (directory)
+(defun binder-notes-create-buffer ()
+  (binder-ensure-in-project)
   (with-current-buffer (get-buffer-create binder-notes-buffer)
-    (setq default-directory directory)
     (binder-notes-mode)
+    (binder-notes-refresh)
     (current-buffer)))
 
-(defun binder-notes-create-window (&optional directory)
-  (let ((filepath (or (buffer-file-name)
-                      (expand-file-name default-directory)))
-        (root (binder-root)))
-    (unless (string= filepath root)
-      (cond ((eq major-mode 'binder-sidebar-mode)
-             (setq binder--notes-fileid (binder-sidebar-get-fileid)))
-            (root
-             (setq binder--notes-fileid
-                   (binder-file-relative-to-root filepath))))))
+(defun binder-notes-create-window ()
   (let ((display-buffer-mark-dedicated t))
-    (with-current-buffer (binder-notes-create-buffer
-                          (or directory (expand-file-name default-directory)))
-      (setq header-line-format
-            '((:propertize (or binder--notes-display binder--notes-fileid)
-                           face bold)
-              "  C-c C-c to commit; C-c C-q to quit"))
-      (display-buffer-in-side-window
-       (current-buffer)
-       (append binder-notes-display-alist
-               (when binder-sidebar-persistent-window
-                 (list '(window-parameters (no-delete-other-windows . t)))))))))
+    (display-buffer-in-side-window
+     (binder-notes-create-buffer)
+     (append binder-notes-display-alist
+             (when binder-sidebar-persistent-window
+               (list '(window-parameters (no-delete-other-windows . t))))))))
 
 (defun binder-show-notes (&optional select)
-  (unless (window-live-p (get-buffer-window binder-notes-buffer))
-    (binder-notes-create-window (binder-root)))
-  (with-current-buffer binder-notes-buffer
-    (when select (select-window (get-buffer-window)))))
-
-(defun binder-toggle-notes (&optional select)
-  "Toggle visibility of binder notes window."
-  (interactive)
+  (binder-ensure-in-project)
+  (if (eq major-mode 'binder-sidebar-mode)
+      (setq binder--notes-fileid (binder-sidebar-get-fileid))
+    (let ((filepath (or (buffer-file-name)
+                        (expand-file-name default-directory)))
+          (root (binder-root)))
+      (unless (string= filepath root)
+        (setq binder--notes-fileid (binder-file-relative-to-root filepath)))))
   (if (window-live-p (get-buffer-window binder-notes-buffer))
-      (delete-windows-on binder-notes-buffer)
-    (binder-show-notes select)))
-
-(defalias 'binder-sidebar-toggle-notes 'binder-toggle-notes)
+      (binder-notes-refresh-window)
+    (binder-notes-create-window))
+  (when select (select-window (get-buffer-window binder-notes-buffer))))
 
 (defun binder-sidebar-open-notes ()
   (interactive)
   (binder-show-notes t))
+
+(defun binder-toggle-notes ()
+  "Toggle visibility of binder notes window."
+  (interactive)
+  (if (window-live-p (get-buffer-window binder-notes-buffer))
+      (delete-window (get-buffer-window binder-notes-buffer))
+    (binder-show-notes)))
+
+(defalias 'binder-sidebar-toggle-notes 'binder-toggle-notes)
 
 (defun binder-notes-save ()
   (interactive)
@@ -1226,3 +1294,11 @@ This is for \"stapling\" together multiple binder files."
 
 (provide 'binder)
 ;;; binder.el ends here
+
+;; Local Variables:
+;; coding: utf-8-unix
+;; fill-column: 80
+;; indent-tabs-mode: nil
+;; require-final-newline: t
+;; sentence-end-double-space: nil
+;; End:
