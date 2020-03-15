@@ -199,6 +199,22 @@
   :group 'files)
 
 
+;;; Core Variables
+
+(defvar binder-file-header
+  "\
+;; -*- coding: utf-8; -*-
+;; This is a Binder project file. It is meant to be human-readable, but you
+;; probably shouldn't edit it.\n\n"
+  "Header information for binder-file.")
+
+(defvar binder--cache nil)
+(defvar binder--modification-time nil)
+(defvar binder--modification-count 0)
+(defvar binder-status-filter-in nil)
+(defvar binder-status-filter-out nil)
+
+
 ;;; Options
 
 (defcustom binder-mode-lighter
@@ -265,22 +281,6 @@ any time with `binder-change-directory'."
   '((t (:inherit (font-lock-variable-name-face))))
   "Default face for status labels."
   :group 'binder-sidebar-faces)
-
-
-;;; Core Variables
-
-(defvar binder-file-header
-  "\
-;; -*- coding: utf-8; -*-
-;; This is a Binder project file. It is meant to be human-readable, but you
-;; probably shouldn't edit it.\n\n"
-  "Header information for binder-file.")
-
-(defvar binder--cache nil)
-(defvar binder--modification-time nil)
-(defvar binder--modification-count 0)
-(defvar binder-status-filter-in nil)
-(defvar binder-status-filter-out nil)
 
 
 ;;; Core Non-interactive Functions
