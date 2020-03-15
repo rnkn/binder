@@ -1278,17 +1278,22 @@ See `binder-sidebar-toggle-include'."
         (erase-buffer)
         (dolist (item item-list)
           (let ((x (point)))
-            (insert-file-contents (expand-file-name (car item) root))
+            (insert-file-contents (expand-file-name (car item) binder-project-directory))
             (goto-char (point-max))
             (insert binder-staple-separator)
             (put-text-property x (point) 'binder-original-file
-                               (expand-file-name (car item) root)))))
+                               (expand-file-name (car item) binder-project-directory)))))
       (funcall (alist-get 'default-mode (binder-read)))
-      (binder-staple-mode t)
-      (let ((pop-up-windows binder-sidebar-pop-up-windows))
-        (pop-to-buffer (current-buffer) t)))))
+      (binder-staple-mode t))
+    (if (eq major-mode 'binder-sidebar-mode)
+        (let ((pop-up-windows binder-sidebar-pop-up-windows))
+          (pop-to-buffer binder-staple-buffer))
+      (pop-to-buffer binder-staple-buffer))))
+
+(defalias 'binder-sidebar-staple 'binder-staple)
 
 (defun binder-staple-find-original-file ()
+  "Find the file containing content at point."
   (interactive)
   (unless binder-staple-mode
     (user-error "Not in %S" 'binder-staple-mode))
