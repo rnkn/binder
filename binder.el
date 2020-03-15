@@ -376,12 +376,15 @@ Change binder directory to %s?"
                               (abbreviate-file-name binder-project-directory)
                               (abbreviate-file-name root)))
         (binder-cd root)))
+     ;; The binder-project-directory is set but we're not in a project; this is
+     ;; fine.
+     ((stringp binder-project-directory)
+      t)
      ;; The binder-project-directory is not set, but we're in a project; offer
      ;; to set it to current project root.
-     (root
-      (when (y-or-n-p (format "Set binder directory to %s?"
-                              (abbreviate-file-name root)))
-        (binder-cd root)))
+     ((stringp root)
+      (binder-cd root)
+      (message "Set binder directory to %s" (abbreviate-file-name root)))
      ;; A fresh project; offer to set project directory to default-directory.
      (t
       (when (y-or-n-p (format "Set binder directory to %s?"
