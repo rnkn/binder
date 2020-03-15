@@ -356,6 +356,7 @@ Reads from `binder--cache' if valid, or from binder file if not."
         binder--cache nil))
 
 (defun binder-ensure-in-project ()
+  "Ensure the current file or directory is in the current project."
   (let ((root (binder-root)))
     (cond
      ;; The binder-project-directory matches root, we're all good.
@@ -472,6 +473,7 @@ Filters in `binder-status-filter-in' or filters out
 (defvar binder-mode-map (make-sparse-keymap))
 
 (defun binder-save (&optional prompt)
+  "Save project data (with prompt when PROMPT is non-nil)."
   (interactive)
   (cond ((= 0 binder--modification-count)
          (message "(No changes need to be saved)"))
@@ -745,11 +747,13 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
       (goto-char x))))
 
 (defun binder-sidebar-refresh-window ()
+  "Call `binder-sidebar-refresh' if sidebar window is live."
   (when (window-live-p (get-buffer-window binder-sidebar-buffer))
     (with-current-buffer binder-sidebar-buffer
       (binder-sidebar-refresh))))
 
 (defun binder-sidebar-force-refresh ()
+  "Clear the cache, reread project data from disk and redraw sidebar."
   (interactive)
   (setq binder--cache nil)
   (binder-sidebar-refresh-window))
@@ -905,7 +909,7 @@ When ARG is non-nil, do not prompt for confirmation."
   (binder-write-maybe))
 
 (defun binder-sidebar-toggle-include ()
-  "Toggle whether binder item at point is included in stapled view."
+  "Toggle whether binder item at point is included in `binder-sidebar-staple'."
   (interactive)
   (let ((fileid (binder-sidebar-get-fileid))
         include)
@@ -940,7 +944,7 @@ When ARG is non-nil, do not prompt for confirmation."
                 "hiding" "showing"))))
 
 (defun binder-sidebar-shift-down (&optional n)
-  "Shift index position of binder item at point down in list."
+  "Shift index position of item at point down N places in list."
   (interactive "p")
   (let ((p (if (<= n 0) -1 1))
         (fileid (binder-sidebar-get-fileid))
@@ -955,7 +959,7 @@ When ARG is non-nil, do not prompt for confirmation."
       (binder-sidebar-goto-item fileid))))
 
 (defun binder-sidebar-shift-up (&optional n)
-  "Shift index position of binder item at point up in list."
+  "Shift index position of item at point up N places in list."
   (interactive "p")
   (binder-sidebar-shift-down (- n)))
 
@@ -1000,7 +1004,7 @@ Unconditionally activates `binder-mode'."
 
 ;;;###autoload
 (defun binder-toggle-sidebar ()
-  "Toggle visibility of binder sidebar window.
+  "Toggle visibility of project sidebar window.
 
 Unconditionally activates `binder-mode'."
   (interactive)
@@ -1099,6 +1103,7 @@ automatically saved."
 (defvar binder--notes-display nil)
 
 (defun binder-notes-refresh ()
+  "Redraw the notes buffer."
   (setq default-directory binder-project-directory)
   (with-silent-modifications
     (erase-buffer)
@@ -1114,11 +1119,13 @@ automatically saved."
             "Nothing selected; C-c C-q to quit"))))
 
 (defun binder-notes-refresh-window ()
+  "Call `binder-notes-refresh' if notes window is live."
   (when (window-live-p (get-buffer-window binder-notes-buffer))
     (with-current-buffer binder-notes-buffer
       (binder-notes-refresh))))
 
 (defun binder-notes-create-buffer ()
+  "Create the notes buffer."
   (binder-ensure-in-project)
   (with-current-buffer (get-buffer-create binder-notes-buffer)
     (binder-notes-mode)
@@ -1126,6 +1133,7 @@ automatically saved."
     (current-buffer)))
 
 (defun binder-notes-create-window ()
+  "Create the notes window."
   (let ((display-buffer-mark-dedicated t))
     (display-buffer-in-side-window
      (binder-notes-create-buffer)
@@ -1134,6 +1142,8 @@ automatically saved."
                (list '(window-parameters (no-delete-other-windows . t))))))))
 
 (defun binder-show-notes (&optional select)
+  "Show the notes for the appropriate project item.
+If argument SELECT is non-nil, select the notes window."
   (binder-ensure-in-project)
   (if (eq major-mode 'binder-sidebar-mode)
       (setq binder--notes-fileid (binder-sidebar-get-fileid))
@@ -1148,6 +1158,7 @@ automatically saved."
   (when select (select-window (get-buffer-window binder-notes-buffer))))
 
 (defun binder-sidebar-open-notes ()
+  "Open notes for item at point and select the notes window."
   (interactive)
   (binder-show-notes t))
 
@@ -1161,6 +1172,9 @@ automatically saved."
 (defalias 'binder-sidebar-toggle-notes 'binder-toggle-notes)
 
 (defun binder-notes-save ()
+  "Save notes buffer content to project.
+
+This command writes project data to disk."
   (interactive)
   (unless (derived-mode-p 'binder-notes-mode)
     (user-error "Not in %S" 'binder-notes-mode))
@@ -1176,22 +1190,25 @@ automatically saved."
              (or binder--notes-display binder--notes-fileid))))
 
 (defun binder-notes-save-and-quit-window ()
+  "Call `binder-notes-save' and quit the notes window."
   (interactive)
   (binder-notes-save)
   (quit-window))
 
 (defun binder-notes-expand-window ()
+  "Toggle the notes window from a side window to full window."
   (interactive)
   (unless (derived-mode-p 'binder-notes-mode)
     (user-error "Not in %S" 'binder-notes-mode))
   (if (window-parameter (selected-window) 'window-side)
       (progn
         (quit-window)
-        (pop-to-buffer (get-buffer-create binder-notes-buffer) t))
+        (pop-to-buffer (get-buffer-create binder-notes-buffer)))
     (quit-window)
     (binder-sidebar-open-notes)))
 
 (defun binder-sidebar-sync-notes ()
+  "Set the current notes to sidebar item at point."
   (while-no-input
     (redisplay)
     (when binder-notes-keep-in-sync
@@ -1220,7 +1237,7 @@ This is for \"stapling\" together multiple binder files."
 
 (defcustom binder-default-stapled-mode
   'text-mode
-  "Default major mode when stapling together files"
+  "Default major mode when stapling together files."
   :type 'function
   :safe 'functionp
   :group 'binder-staple)
@@ -1237,10 +1254,16 @@ This is for \"stapling\" together multiple binder files."
   :safe 'stringp
   :group 'binder-staple)
 
-(defun binder-sidebar-staple ()
+(defun binder-staple ()
+  "Concatenate all project files marked as included.
+Creates `binder-staple-buffer' with each file is separated by
+`binder-staple-separator'. Sets destination buffer major mode to
+\"default-mode\" project property.
+
+See `binder-sidebar-toggle-include'."
   (interactive)
-  (let ((root (binder-root))
-        (item-list
+  (binder-ensure-in-project)
+  (let ((item-list
          (seq-filter
           (lambda (item) (alist-get 'include item))
           (binder-filter-structure))))
