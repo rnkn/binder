@@ -351,8 +351,8 @@ Reads from `binder--cache' if valid, or from binder file if not."
 
 (defun binder-cd (directory)
   "Set `binder-project-directory' to DIRECTORY and erase cache."
-  (binder-write)
   (setq binder-project-directory (expand-file-name directory)
+        binder--notes-fileid nil
         binder--cache nil))
 
 (defun binder-ensure-in-project ()
@@ -487,7 +487,8 @@ Filters in `binder-status-filter-in' or filters out
   (interactive "DDirectory: ")
   (binder-save 'prompt)
   (binder-cd directory)
-  (binder-sidebar-refresh-window))
+  (binder-sidebar-refresh-window)
+  (binder-notes-refresh-window))
 
 (defun binder-next (&optional n)
   "Visit Nth next file in binder.
@@ -1104,11 +1105,13 @@ automatically saved."
     (insert (or (binder-get-item-prop binder--notes-fileid 'notes)
                 ""))
     (setq binder--notes-display
-          (binder-get-item-prop binder--notes-fileid 'display)
-          header-line-format
-          (list (list :propertize (or binder--notes-display binder--notes-fileid)
-                      'face 'bold)
-                "  C-c C-c to commit; C-c C-q to quit"))))
+          (binder-get-item-prop binder--notes-fileid 'display))
+    (setq header-line-format
+          (if binder--notes-fileid
+              (list (list :propertize (or binder--notes-display binder--notes-fileid)
+                          'face 'bold)
+                    "  C-c C-c to commit; C-c C-q to quit")
+            "Nothing selected; C-c C-q to quit"))))
 
 (defun binder-notes-refresh-window ()
   (when (window-live-p (get-buffer-window binder-notes-buffer))
