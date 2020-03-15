@@ -27,6 +27,7 @@
   ("tutorial/more-notes.txt"
    (notes . "Even more notes.\n\nEmbiggen this window with C-c C-l."))
   ("tutorial/akai-ryu.jpg"
+   (display . "tutorial/akai-ryu.jpg")
    (include)
    (status . "image")
    (notes . "The binder is not just for writing, but references too! Here's an image*\n\nDionaea muscipula \"Akai Ryu\", Japanese for \"Red Dragon\"\n~ Wikipedia\n\n* your Emacs may not support images :("))
