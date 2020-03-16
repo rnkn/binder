@@ -776,6 +776,7 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   "Clear the cache, reread project data from disk and redraw sidebar."
   (interactive)
   (setq binder--cache nil)
+  (message "Project cache cleared")
   (binder-sidebar-refresh-window))
 
 (defalias 'binder-sidebar-change-directory 'binder-change-directory)
