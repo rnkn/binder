@@ -366,8 +366,11 @@ Reads from `binder--cache' if valid, or from binder file if not."
   (let ((root (binder-root)))
     (cond
      ;; The binder-project-directory matches root, we're all good.
-     ((string= (directory-file-name (expand-file-name binder-project-directory))
-               (directory-file-name root))
+     ((and (stringp binder-project-directory)
+           (stringp root)
+           (string= (directory-file-name
+                     (expand-file-name binder-project-directory))
+                    (directory-file-name root)))
       t)
      ;; The binder-project-directory does not match project root; offer to
      ;; change it to current project root.
