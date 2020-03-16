@@ -858,11 +858,8 @@ When ARG is non-nil, visit in new window."
 (defun binder-sidebar-unmark-all ()
   "Unmark all binder items."
   (interactive)
-  (let ((fileid (binder-sidebar-get-fileid)))
-    (goto-char (point-min))
-    (while (not (eobp))
-      (binder-sidebar-unmark))
-    (binder-sidebar-goto-item fileid)))
+  (setq binder--sidebar-marked nil)
+  (binder-sidebar-refresh))
 
 (defun binder-sidebar-add-file (fileid)
   "Add (possibly non-existent) file to binder as FILEID."
@@ -934,7 +931,7 @@ When ARG is non-nil, do not prompt for confirmation."
                       (list (binder-sidebar-get-fileid))))
     (binder-set-item-prop fileid 'include
                           (not (binder-get-item-prop fileid 'include))))
-  (binder-sidebar-unmark-all)
+  (setq binder--sidebar-marked nil)
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
@@ -949,7 +946,7 @@ When ARG is non-nil, do not prompt for confirmation."
   (dolist (fileid (or binder--sidebar-marked
                       (list (binder-sidebar-get-fileid))))
     (binder-set-item-prop fileid 'status status))
-  (binder-sidebar-unmark-all)
+  (setq binder--sidebar-marked nil)
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
