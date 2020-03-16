@@ -889,18 +889,18 @@ When ARG is non-nil, visit in new window."
   (binder-sidebar-goto-item fileid))
 
 (defun binder-sidebar-remove (arg)
-  "Remove binder item at point.
+  "Remove marked items or item at point.
 When ARG is non-nil, do not prompt for confirmation."
   (interactive "P")
-  (let ((fileid (binder-sidebar-get-fileid))
-        display)
-    (setq display (or (binder-get-item-prop fileid 'display)
-                      fileid))
-    (when (or arg (y-or-n-p (format "Really remove item %S?" display)))
-      (binder-delete-item fileid))
-    (setq binder--modification-time (current-time))
-    (binder-sidebar-refresh)
-    (binder-write-maybe)))
+  (let ((fileid-list (or binder--sidebar-marked
+                      (list (binder-sidebar-get-fileid)))))
+    (when (or arg (y-or-n-p (format "Really remove %s?"
+                                    (string-join fileid-list ", "))))
+      (mapc #'binder-delete-item fileid-list)
+      (setq binder--modification-time (current-time))
+      (setq binder--sidebar-marked nil)))
+  (binder-sidebar-refresh)
+  (binder-write-maybe))
 
 (defun binder-sidebar-rename ()
   "Change display name of binder item at point."
