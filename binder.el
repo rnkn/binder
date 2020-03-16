@@ -268,7 +268,7 @@ any time with `binder-change-directory'."
   :group 'binder-sidebar-faces)
 
 (defface binder-sidebar-highlight
-  '((t (:extend t :inherit (secondary-selection))))
+  '((t (:extend t :inherit (lazy-highlight))))
   "Default face for highlighted items."
   :group 'binder-sidebar-faces)
 
