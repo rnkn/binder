@@ -750,11 +750,12 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
           ;; Add the item STATUS with a hashtag, because hashtags are
           ;; cool, right?
           (when (and status (< 0 (string-width status)))
-            (move-to-column binder-sidebar-status-column)
+            (move-to-column (1- binder-sidebar-status-column))
             (unless (eolp) (setq status-overwrite t))
+            (move-to-column binder-sidebar-status-column)
             (indent-to-column binder-sidebar-status-column)
-            (let ((x (1- (point))))
-              (delete-region x (line-end-position))
+            (let ((x (point)))
+              (delete-region (1- x) (line-end-position))
               (insert (if status-overwrite "~" " ")
                       binder-sidebar-status-char status)
               (put-text-property x (line-end-position)
