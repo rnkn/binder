@@ -529,9 +529,7 @@ Or visit Nth previous file if N is negative."
       (find-file-existing
        (expand-file-name (car (nth next-index structure))
                          binder-project-directory))
-      (binder-sidebar-refresh-window)
-      (setq binder--notes-fileid binder--current-fileid)
-      (binder-notes-refresh-window))
+      (binder-sidebar-refresh-window))
     ;; Setup the overriding keymap.
     (unless overriding-terminal-local-map
       (let ((keys (substring (this-single-command-keys) 0 -1))
