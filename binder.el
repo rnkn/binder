@@ -700,7 +700,10 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   "Redraw binder sidebar, reading from cache."
   (interactive)
   (with-silent-modifications
-    (setq default-directory binder-project-directory)
+    (setq default-directory binder-project-directory
+          header-line-format
+          (list :propertize (abbreviate-file-name binder-project-directory)
+                                                  'face 'bold))
     (let ((x (point)))
       (erase-buffer)
       (dolist (item (binder-filter-structure))
