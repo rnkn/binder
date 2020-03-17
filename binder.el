@@ -490,7 +490,9 @@ Filters in `binder-status-filter-in' or filters out
 
 ;;; Global Minor Mode
 
+(defvar binder-navigation-map (make-sparse-keymap))
 (defvar binder-mode-map (make-sparse-keymap))
+(set-keymap-parent binder-mode-map binder-navigation-map)
 
 (defun binder-save (&optional prompt)
   "Save project data (with prompt when PROMPT is non-nil)."
@@ -535,7 +537,7 @@ Or visit Nth previous file if N is negative."
     ;; Setup the overriding keymap.
     (unless overriding-terminal-local-map
       (let ((keys (substring (this-single-command-keys) 0 -1))
-            (map (cdr binder-mode-map)))
+            (map (cdr binder-navigation-map)))
         (mapc (lambda (k) (setq map (assq k map))) keys)
         (when (consp map) (set-transient-map (cdr map) t))))))
 
