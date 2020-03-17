@@ -358,6 +358,8 @@ Reads from `binder--cache' if valid, or from binder file if not."
 (defun binder-cd (directory)
   "Set `binder-project-directory' to DIRECTORY and erase cache."
   (setq binder-project-directory (expand-file-name directory)
+        binder-status-filter-in nil
+        binder-status-filter-out nil
         binder--notes-fileid nil
         binder--cache nil))
 
