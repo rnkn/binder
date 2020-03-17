@@ -547,9 +547,9 @@ Or visit Nth next file if N is negative."
   (interactive "p")
   (binder-next (- n)))
 
-(defun binder-add-file (fileid &optional index)
-  "Add a (possibly non-existent) FILEID to the binder at INDEX.
-If the current file is in the binder, add at INDEX after that one."
+(defun binder-add-file (fileid &optional string index)
+  "Add a (possibly non-existent) FILEID containing STRING at INDEX.
+If the current file is in the project, add at index after that one."
   (interactive "FAdd file (extension optional): ")
   (binder-ensure-in-project)
   (setq fileid (binder-file-relative-to-root fileid))
@@ -568,6 +568,7 @@ If the current file is in the binder, add at INDEX after that one."
       (if (directory-name-p filepath)
           (make-directory filepath t)
         (with-current-buffer (find-file-noselect filepath)
+          (when (stringp string) (insert string))
           (write-file filepath))))
     ;; Insert FILEID into binder at INDEX, or after current file.
     (unless (binder-get-item fileid)
@@ -585,8 +586,15 @@ If the current file is in the binder, add at INDEX after that one."
     (let ((pop-up-windows binder-sidebar-pop-up-windows))
       (find-file filepath))))
 
-(define-key binder-mode-map (kbd "C-c ]") #'binder-next)
-(define-key binder-mode-map (kbd "C-c [") #'binder-previous)
+(defun binder-extract-region-to-new-file (beg end fileid)
+  "Delete region between BEG and END and insert as new project file as FILEID."
+  (interactive "r\nFNew file name (extension optional): ")
+  (binder-ensure-in-project)
+  (let ((string (delete-and-extract-region beg end)))
+    (binder-add-file fileid string)))
+
+(define-key binder-navigation-map (kbd "C-c ]") #'binder-next)
+(define-key binder-navigation-map (kbd "C-c [") #'binder-previous)
 (define-key binder-mode-map (kbd "C-c ;") #'binder-reveal-in-sidebar)
 (define-key binder-mode-map (kbd "C-c '") #'binder-toggle-sidebar)
 (define-key binder-mode-map (kbd "C-c \"") #'binder-toggle-notes)
@@ -895,7 +903,7 @@ When ARG is non-nil, visit in new window."
   (interactive "FAdd file (extension optional): ")
   (unless (eq major-mode 'binder-sidebar-mode)
     (user-error "Not in %S" 'binder-sidebar-mode))
-  (binder-add-file fileid (1+ (binder-sidebar-get-index)))
+  (binder-add-file fileid nil (1+ (binder-sidebar-get-index)))
   (binder-sidebar-goto-item fileid))
 
 (defun binder-sidebar-remove (arg)
