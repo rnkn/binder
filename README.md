@@ -5,7 +5,7 @@ disk, you should consider all binder data (project structure, notes, statuses)
 as susceptible to loss. Key bindings, variable and function names, and overall
 program design are subject to change.**
 
-![screenshot](https://user-images.githubusercontent.com/1256849/75653252-ec7b8300-5ca8-11ea-9d7d-af6a528abc2c.png)
+![screenshot](https://user-images.githubusercontent.com/1256849/76825591-1ebee000-6866-11ea-93db-a533485cdd7e.png)
 
 Binder is global minor mode (and associated major modes) to facilitate working
 on a writing project in multiple files. It is heavily inspired by the binder
