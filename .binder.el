@@ -6,8 +6,8 @@
   ("binder.el"
    (status . "alpha"))
   ("README.md"
-   (include)
-   (status . "todo"))
+   (include))
+  ("TODO.md")
   ("tutorial/start-here.txt"
    (notes . "This file is going by a pseudonym")
    (status . "start-here")
