@@ -957,6 +957,14 @@ When ARG is non-nil, do not prompt for confirmation."
   (binder-sidebar-refresh)
   (binder-write-maybe))
 
+(defun binder-sidebar-clear-include ()
+  "Make no items included in `binder-sidebar-staple'."
+  (interactive)
+  (dolist (item (binder-get-structure))
+    (binder-set-item-prop (car item) 'include nil))
+  (binder-sidebar-refresh)
+  (binder-write-maybe))
+
 (defun binder-sidebar-set-status (status)
   "Set the status of marked items or item at point to STATUS."
   (interactive
@@ -1100,6 +1108,7 @@ Unconditionally activates `binder-mode'."
 (define-key binder-sidebar-mode-map (kbd "R") #'binder-sidebar-relocate)
 (define-key binder-sidebar-mode-map (kbd "E") #'binder-sidebar-toggle-file-extensions)
 (define-key binder-sidebar-mode-map (kbd "x") #'binder-sidebar-toggle-include)
+(define-key binder-sidebar-mode-map (kbd "X") #'binder-sidebar-clear-include)
 (define-key binder-sidebar-mode-map (kbd "/") #'binder-sidebar-filter-in)
 (define-key binder-sidebar-mode-map (kbd "\\") #'binder-sidebar-filter-out)
 (define-key binder-sidebar-mode-map (kbd "M-RET") #'binder-sidebar-new-file)
