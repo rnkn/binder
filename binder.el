@@ -519,28 +519,28 @@ Filters in `binder-status-filter-in' or filters out
   "Visit Nth next file in binder.
 Or visit Nth previous file if N is negative."
   (interactive "p")
-  (binder-ensure-in-project)
-  ;; Find the current file/directory fileid, if one.
-  (let ((this-fileid (binder-get-buffer-fileid))
-        (structure (binder-filter-structure))
-        index next-index)
-    ;; If current file has an INDEX, get the NEXT-INDEX.
-    (setq index (or (binder-get-item-index this-fileid) 0)
-          next-index (+ index n))
-    ;; If NEXT-INDEX is within the filtered structure length, find the
-    ;; Nth next/previous file.
-    (if (not (<= 0 next-index (1- (length structure))))
-        (message "End of binder")
-      (find-file-existing
-       (expand-file-name (car (nth next-index structure))
-                         binder-project-directory))
-      (binder-sidebar-refresh-window))
-    ;; Setup the overriding keymap.
-    (unless overriding-terminal-local-map
-      (let ((keys (substring (this-single-command-keys) 0 -1))
-            (map (cdr binder-navigation-map)))
-        (mapc (lambda (k) (setq map (assq k map))) keys)
-        (when (consp map) (set-transient-map (cdr map) t))))))
+  (when (binder-ensure-in-project)
+    ;; Find the current file/directory fileid, if one.
+    (let ((this-fileid (binder-get-buffer-fileid))
+          (structure (binder-filter-structure))
+          index next-index)
+      ;; If current file has an INDEX, get the NEXT-INDEX.
+      (setq index (or (binder-get-item-index this-fileid) 0)
+            next-index (+ index n))
+      ;; If NEXT-INDEX is within the filtered structure length, find the
+      ;; Nth next/previous file.
+      (if (not (<= 0 next-index (1- (length structure))))
+          (message "End of binder")
+        (find-file-existing
+         (expand-file-name (car (nth next-index structure))
+                           binder-project-directory))
+        (binder-sidebar-refresh-window))
+      ;; Setup the overriding keymap.
+      (unless overriding-terminal-local-map
+        (let ((keys (substring (this-single-command-keys) 0 -1))
+              (map (cdr binder-navigation-map)))
+          (mapc (lambda (k) (setq map (assq k map))) keys)
+          (when (consp map) (set-transient-map (cdr map) t)))))))
 
 (defun binder-previous (&optional n)
   "Visit Nth previous file in binder.
