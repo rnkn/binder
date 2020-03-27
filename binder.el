@@ -1013,6 +1013,11 @@ When ARG is non-nil, do not prompt for confirmation."
   (interactive "p")
   (binder-sidebar-shift-down (- n)))
 
+(defun binder-sidebar-jump-to-current ()
+  "Jump to current file in sidebar."
+  (interactive)
+  (binder-sidebar-goto-item binder--current-fileid))
+
 (defun binder-sidebar-filter-in (status)
   "Filter items to only include items with STATUS."
   (interactive
@@ -1083,6 +1088,7 @@ Unconditionally activates `binder-mode'."
 
 (define-key binder-sidebar-mode-map (kbd "g") #'binder-sidebar-refresh)
 (define-key binder-sidebar-mode-map (kbd "G") #'binder-sidebar-force-refresh)
+(define-key binder-sidebar-mode-map (kbd "j") #'binder-sidebar-jump-to-current)
 (define-key binder-sidebar-mode-map (kbd "C") #'binder-sidebar-change-directory)
 (define-key binder-sidebar-mode-map (kbd "n") #'next-line)
 (define-key binder-sidebar-mode-map (kbd "p") #'previous-line)
