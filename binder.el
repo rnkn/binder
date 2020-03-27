@@ -709,14 +709,17 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
 (defvar binder--current-fileid nil)
 (defvar binder--sidebar-marked nil)
 
-(defun binder-sidebar-refresh ()
+(defun binder-sidebar-refresh (&optional interactive)
   "Redraw binder sidebar, reading from cache."
-  (interactive)
+  (interactive "p")
   (with-silent-modifications
     (setq default-directory binder-project-directory
           header-line-format
           (list :propertize (abbreviate-file-name binder-project-directory)
-                                                  'face 'bold))
+                'face 'bold))
+    (when interactive
+      (setq binder-status-filter-in nil
+            binder-status-filter-out nil))
     (let ((x (point)))
       (erase-buffer)
       (dolist (item (binder-filter-structure))
