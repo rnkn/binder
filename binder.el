@@ -549,9 +549,10 @@ Or visit Nth next file if N is negative."
   (interactive "p")
   (binder-next (- n)))
 
-(defun binder-add-file (fileid &optional string index)
-  "Add a (possibly non-existent) FILEID containing STRING at INDEX.
-If the current file is in the project, add at index after that one."
+(defun binder-add-file (fileid &optional index string)
+  "Add a (possibly non-existent) FILEID at INDEX containing STRING.
+If the current file is in the project, add at index after that
+one, otherwise insert at end."
   (interactive "FAdd file (extension optional): ")
   (binder-ensure-in-project)
   (setq fileid (binder-file-relative-to-root fileid))
@@ -589,11 +590,11 @@ If the current file is in the project, add at index after that one."
       (find-file filepath))))
 
 (defun binder-extract-region-to-new-file (beg end fileid)
-  "Delete region between BEG and END and insert as new project file as FILEID."
+  "Extract region between BEG and END into new project file FILEID."
   (interactive "r\nFNew file name (extension optional): ")
   (binder-ensure-in-project)
   (let ((string (delete-and-extract-region beg end)))
-    (binder-add-file fileid string)))
+    (binder-add-file fileid nil string)))
 
 (define-key binder-navigation-map (kbd "C-c ]") #'binder-next)
 (define-key binder-navigation-map (kbd "C-c [") #'binder-previous)
@@ -901,7 +902,7 @@ When ARG is non-nil, visit in new window."
   (interactive "FAdd file (extension optional): ")
   (unless (eq major-mode 'binder-sidebar-mode)
     (user-error "Not in %S" 'binder-sidebar-mode))
-  (binder-add-file fileid nil (1+ (binder-sidebar-get-index)))
+  (binder-add-file fileid (1+ (binder-sidebar-get-index)))
   (binder-sidebar-goto-item fileid))
 
 (defun binder-sidebar-remove (arg)
