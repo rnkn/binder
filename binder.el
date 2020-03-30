@@ -792,13 +792,6 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
     (with-current-buffer binder-sidebar-buffer
       (binder-sidebar-refresh))))
 
-(defun binder-sidebar-force-refresh ()
-  "Clear the cache, reread project data from disk and redraw sidebar."
-  (interactive)
-  (setq binder--cache nil)
-  (message "Project cache cleared")
-  (binder-sidebar-refresh-window))
-
 (defalias 'binder-sidebar-change-directory 'binder-change-directory)
 
 (defun binder-sidebar-create-buffer ()
@@ -1087,7 +1080,6 @@ Unconditionally activates `binder-mode'."
   (add-hook 'post-command-hook 'binder-sidebar-sync-notes t t))
 
 (define-key binder-sidebar-mode-map (kbd "g") #'binder-sidebar-refresh)
-(define-key binder-sidebar-mode-map (kbd "G") #'binder-sidebar-force-refresh)
 (define-key binder-sidebar-mode-map (kbd "j") #'binder-sidebar-jump-to-current)
 (define-key binder-sidebar-mode-map (kbd "C") #'binder-sidebar-change-directory)
 (define-key binder-sidebar-mode-map (kbd "n") #'next-line)
