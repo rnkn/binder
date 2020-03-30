@@ -1041,6 +1041,45 @@ Added to `window-configuration-change-hook'."
       (setq binder--current-fileid (binder-get-buffer-fileid))
       (binder-sidebar-refresh-window))))
 
+(defun binder-sidebar-help (char)
+  "Interactively set project-specific properties by CHAR."
+  (declare (interactive-only t))
+  (interactive
+   (list (read-char-choice "? = describe-mode, \
+m = set project default-staple-mode, \
+x = set project default-file-extension, \
+q = quit-window, \
+C-g = cancel: " '(?? ?m ?x ?q))))
+  (cond ((= char ?q)
+         (quit-window))
+        ((= char ??)
+         (describe-mode))
+        ((= char ?m)
+         (let ((mode
+                (intern-soft
+                 (completing-read
+                  "Default staple mode: "
+                  (let (collection)
+                    (mapatoms
+                     (lambda (atom)
+                       (when (string-match "-mode\\'" (symbol-name atom))
+                         (push atom collection))))
+                    collection)))))
+           (unless (string-empty-p mode)
+             (if (assq 'default-staple-mode (binder-read))
+                 (setf (alist-get 'default-staple-mode (binder-read)) mode)
+               (push (cons 'default-staple-mode mode) (binder-read)))))
+         (binder-write))
+        ((= char ?x)
+         (let ((extension
+                (read-string "Default file extension: ")))
+           (unless (string-empty-p extension)
+             (setq extension (string-trim extension "[ .]*"))
+             (if (assq 'default-extension binder--cache)
+                 (setf (alist-get 'default-extension binder--cache) extension)
+               (push (cons 'default-extension extension) binder--cache))))
+         (binder-write))))
+
 ;;;###autoload
 (defun binder-reveal-in-sidebar ()
   "Reveal current file in binder sidebar.
@@ -1081,6 +1120,7 @@ Unconditionally activates `binder-mode'."
   "Major mode for working with `binder' projects."
   (add-hook 'post-command-hook 'binder-sidebar-sync-notes t t))
 
+(define-key binder-sidebar-mode-map (kbd "?") #'binder-sidebar-help)
 (define-key binder-sidebar-mode-map (kbd "g") #'binder-sidebar-refresh)
 (define-key binder-sidebar-mode-map (kbd "j") #'binder-sidebar-jump-to-current)
 (define-key binder-sidebar-mode-map (kbd "C") #'binder-sidebar-change-directory)
