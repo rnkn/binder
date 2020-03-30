@@ -305,7 +305,7 @@ any time with `binder-change-directory'."
         (insert binder-file-header
                 (pp-to-string
                  (list (cons 'structure nil)
-                       (cons 'default-mode binder-default-stapled-mode)
+                       (cons 'default-staple-mode binder-default-staple-mode)
                        (cons 'default-extension binder-default-file-extention))))
         (write-file binder-file))
       binder-file))))
@@ -1336,7 +1336,7 @@ This command writes project data to disk."
 This is for \"stapling\" together multiple binder files."
   :group 'binder)
 
-(defcustom binder-default-stapled-mode
+(defcustom binder-default-staple-mode
   'text-mode
   "Default major mode when stapling together files."
   :type 'function
@@ -1359,7 +1359,7 @@ This is for \"stapling\" together multiple binder files."
   "Concatenate all project files marked as included.
 Creates `binder-staple-buffer' with each file is separated by
 `binder-staple-separator'. Sets destination buffer major mode to
-\"default-mode\" project property.
+\"default-staple-mode\" project property.
 
 See `binder-sidebar-toggle-include'."
   (interactive)
@@ -1378,7 +1378,7 @@ See `binder-sidebar-toggle-include'."
             (insert binder-staple-separator)
             (put-text-property x (point) 'binder-original-file
                                (expand-file-name (car item) binder-project-directory)))))
-      (funcall (alist-get 'default-mode (binder-read)))
+      (funcall (alist-get 'default-staple-mode (binder-read)))
       (binder-staple-mode t))
     (if (eq major-mode 'binder-sidebar-mode)
         (let ((pop-up-windows binder-sidebar-pop-up-windows))
