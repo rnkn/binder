@@ -16,3 +16,6 @@
 - [X] implement kill region to new binder item
 - [ ] project search
 - [ ] jump to file in project
+- [ ] look at `text-clone-create` for staple mode
+- [ ] "status" -> "tag"
+- [ ] implement multiple tags
