@@ -341,7 +341,8 @@ Reads from `binder--cache' if valid, or from binder file if not."
 (defun binder-write ()
   "Write binder data to file."
   (mapc (lambda (item)
-          (setf item (rassq-delete-all "" item)))
+          (setf item (rassq-delete-all nil item)
+                item (rassq-delete-all "" item)))
         (binder-get-structure))
   (let ((binder-file (binder-find-binder-file)))
     (with-temp-buffer
