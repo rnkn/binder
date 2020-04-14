@@ -305,7 +305,7 @@ any time with `binder-change-directory'."
         (insert binder-file-header
                 (pp-to-string
                  (list (cons 'structure nil)
-                       (cons 'default-staple-mode binder-default-staple-mode)
+                       (cons 'default-stapled-mode binder-default-stapled-mode)
                        (cons 'default-extension binder-default-file-extention))))
         (write-file binder-file))
       binder-file))))
@@ -1046,7 +1046,7 @@ Added to `window-configuration-change-hook'."
   (declare (interactive-only t))
   (interactive
    (list (read-char-choice "? = describe-mode, \
-m = set project default-staple-mode, \
+m = set project default-stapled-mode, \
 x = set project default-file-extension, \
 q = quit-window, \
 C-g = cancel: " '(?? ?m ?x ?q))))
@@ -1058,18 +1058,20 @@ C-g = cancel: " '(?? ?m ?x ?q))))
          (let ((mode
                 (intern-soft
                  (completing-read
-                  "Default staple mode: "
+                  "Default stapled mode: "
                   (let (collection)
                     (mapatoms
                      (lambda (atom)
-                       (when (string-match "-mode\\'" (symbol-name atom))
+                       (when (and (string-match "-mode\\'" (symbol-name atom))
+                                  (not (string-match "^global-\\|-minor-mode\\'\\|--"
+                                                     (symbol-name atom))))
                          (push atom collection))))
                     collection)))))
            (unless (string-empty-p mode)
-             (if (assq 'default-staple-mode (binder-read))
-                 (setf (alist-get 'default-staple-mode (binder-read)) mode)
-               (push (cons 'default-staple-mode mode) (binder-read)))))
-         (binder-write))
+             (if (assq 'default-stapled-mode (binder-read))
+                 (setf (alist-get 'default-stapled-mode (binder-read)) mode)
+               (push (cons 'default-stapled-mode mode) (binder-read)))))
+         (binder-write-maybe))
         ((= char ?x)
          (let ((extension
                 (read-string "Default file extension: ")))
@@ -1336,7 +1338,7 @@ This command writes project data to disk."
 This is for \"stapling\" together multiple binder files."
   :group 'binder)
 
-(defcustom binder-default-staple-mode
+(defcustom binder-default-stapled-mode
   'text-mode
   "Default major mode when stapling together files."
   :type 'function
@@ -1359,7 +1361,7 @@ This is for \"stapling\" together multiple binder files."
   "Concatenate all project files marked as included.
 Creates `binder-staple-buffer' with each file is separated by
 `binder-staple-separator'. Sets destination buffer major mode to
-\"default-staple-mode\" project property.
+\"default-stapled-mode\" project property.
 
 See `binder-sidebar-toggle-include'."
   (interactive)
@@ -1378,7 +1380,7 @@ See `binder-sidebar-toggle-include'."
             (insert binder-staple-separator)
             (put-text-property x (point) 'binder-original-file
                                (expand-file-name (car item) binder-project-directory)))))
-      (funcall (alist-get 'default-staple-mode (binder-read)))
+      (funcall (alist-get 'default-stapled-mode (binder-read)))
       (binder-staple-mode t))
     (if (eq major-mode 'binder-sidebar-mode)
         (let ((pop-up-windows binder-sidebar-pop-up-windows))

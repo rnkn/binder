@@ -31,5 +31,5 @@
    (notes . "ASCII art by jgs"))
   ("tutorial/end.txt"
    (display . "tutorial/The End")))
- (default-staple-mode . text-mode)
+ (default-stapled-mode . text-mode)
  (default-extension . "txt"))
