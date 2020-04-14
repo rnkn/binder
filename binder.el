@@ -1299,12 +1299,14 @@ This command writes project data to disk."
 
 (defun binder-notes-save-and-quit-window ()
   "Call `binder-notes-save' and quit the notes window."
+  (declare (interactive-only t))
   (interactive)
   (binder-notes-save)
   (quit-window))
 
 (defun binder-notes-expand-window ()
   "Toggle the notes window from a side window to full window."
+  (declare (interactive-only t))
   (interactive)
   (unless (derived-mode-p 'binder-notes-mode)
     (user-error "Not in %S" 'binder-notes-mode))
