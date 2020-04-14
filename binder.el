@@ -452,16 +452,12 @@ Switch project directory to %s?"
   (setcdr (assq 'structure (binder-read))
           (let ((structure (binder-get-structure)))
             (append (seq-take structure index)
-                    (cons item (seq-drop structure index)))))
-  (setq binder--modification-time (current-time))
-  (binder-write-maybe))
+                    (cons item (seq-drop structure index))))))
 
 (defun binder-delete-item (fileid)
   "Delete binder item for FILEID."
-  (setcdr (assq 'structure (binder-read))
-          (remove (binder-get-item fileid) (binder-get-structure)))
-  (setq binder--modification-time (current-time))
-  (binder-write-maybe))
+  (setf (alist-get 'structure (binder-read))
+        (remove (binder-get-item fileid) (binder-get-structure))))
 
 (defun binder-get-prop-list (prop)
   "Return list of values for PROP."
