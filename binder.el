@@ -993,6 +993,7 @@ When ARG is non-nil, do not prompt for confirmation."
             (if binder-sidebar-hide-file-extensions
                 "hiding" "showing"))))
 
+;; FIXME: fails with filtered structure
 (defun binder-sidebar-shift-down (&optional n)
   "Shift index position of item at point down N places in list."
   (interactive "p")
