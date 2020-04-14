@@ -1444,7 +1444,6 @@ See `binder-sidebar-toggle-include'."
 ;;; binder.el ends here
 
 ;; Local Variables:
-;; coding: utf-8-unix
 ;; fill-column: 80
 ;; indent-tabs-mode: nil
 ;; require-final-newline: t
