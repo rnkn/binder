@@ -3,8 +3,7 @@
 ;; probably shouldn't edit it.
 
 ((structure
-  ("binder.el"
-   (status . "alpha"))
+  ("binder.el")
   ("README.md")
   ("TODO.md")
   ("tutorial/start-here.txt"
