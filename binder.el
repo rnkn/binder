@@ -292,6 +292,16 @@ any time with `binder-change-directory'."
     (when (and directory (file-directory-p directory))
       (expand-file-name directory))))
 
+(defun binder-set-modified ()
+  "Set the binder data as modified."
+  (cl-incf binder--modification-count)
+  (setq binder--modification-time (current-time)))
+
+(defun binder-set-unmodified ()
+  "Set the binder data as unmodified."
+  (setq binder--modification-count 0
+        binder--modification-time (current-time)))
+
 (defun binder-init-binder-file ()
   "Initialize an empty binder file."
   (let ((directory
@@ -308,53 +318,56 @@ any time with `binder-change-directory'."
                        (cons 'default-stapled-mode binder-default-stapled-mode)
                        (cons 'default-extension binder-default-file-extention))))
         (write-file binder-file))
+      (binder-set-unmodified)
       binder-file))))
 
-(defun binder-find-binder-file ()
-  "Find or initialize current binder file."
+(defun binder-find-project-file ()
+  "Find or initialize current project file."
   (let ((binder-file
          (expand-file-name binder-default-file (binder-root))))
     (if (file-exists-p binder-file) binder-file
       (binder-init-binder-file))))
 
-(defun binder-read ()
-  "Read current binder data.
-Reads from `binder--cache' if valid, or from binder file if not."
-  (let ((binder-file (binder-find-binder-file)))
-    (unless binder-file
-      (user-error "No binder file found"))
-    ;; The cache is only valid if binder--cache is non-nil,
-    ;; binder-project-directory is the current binder-root, and either we
-    ;; haven't modified binder data or the binder file is older than
-    ;; binder--modification-time.
-    (unless (and binder--cache
-                 (string= (expand-file-name binder-project-directory) (binder-root))
-                 (or (= binder--modification-count 0)
-                     (time-less-p (nth 5 (file-attributes binder-file))
-                                  binder--modification-time)))
-      (with-temp-buffer
-        (insert-file-contents binder-file)
-        (goto-char (point-min))
-        (setq binder--cache (read (current-buffer))))))
-  binder--cache)
-
 (defun binder-write ()
   "Write binder data to file."
-  (mapc (lambda (item)
-          (setf item (rassq-delete-all nil item)
-                item (rassq-delete-all "" item)))
-        (binder-get-structure))
-  (let ((binder-file (binder-find-binder-file)))
+  ;; (mapc (lambda (item)
+  ;;         (setf item (rassq-delete-all nil item)
+  ;;               item (rassq-delete-all "" item)))
+  ;;       (binder-get-structure))
+  (let ((binder-file (binder-find-project-file)))
     (with-temp-buffer
       (insert binder-file-header (pp-to-string binder--cache))
       (write-file binder-file)))
-  (setq binder--modification-count 0))
+  (binder-set-unmodified))
 
 (defun binder-write-maybe ()
   "Write binder data if passed modified threshold."
-  (if (< binder--modification-count binder-save-threshold)
-      (cl-incf binder--modification-count)
-    (binder-write)))
+  (if (>= binder--modification-count binder-save-threshold)
+      (binder-write)
+    (binder-set-modified)))
+
+(defun binder-read ()
+  "Read current binder data.
+Reads from `binder--cache' if valid, or from binder file if not."
+  (let ((binder-file (binder-find-project-file)))
+    (unless binder-file (user-error "No binder file found"))
+    (when (and binder--cache
+               (time-less-p binder--modification-time
+                            (nth 5 (file-attributes binder-file))))
+      (unless (y-or-n-p "Project file changed on disk; revert from disk? ")
+        (binder-write))
+      (setq binder--cache nil))
+    ;; The cache is only valid if binder--cache is non-nil, and
+    ;; binder-project-directory is the current binder-root.
+    (unless (and binder--cache
+                 (string= (expand-file-name binder-project-directory)
+                          (binder-root)))
+      (with-temp-buffer
+        (insert-file-contents binder-file)
+        (goto-char (point-min))
+        (setq binder--cache (read (current-buffer)))
+        (binder-set-unmodified))))
+  binder--cache)
 
 (defun binder-cd (directory)
   "Set `binder-project-directory' to DIRECTORY and erase cache."
@@ -363,10 +376,11 @@ Reads from `binder--cache' if valid, or from binder file if not."
   (setq binder-status-filter-in nil
         binder-status-filter-out nil
         binder--notes-fileid nil
-        binder--cache nil))
+        binder--cache nil)
+  (binder-set-unmodified))
 
 (defun binder-ensure-in-project ()
-  "Ensure the current file or directory is in the current project."
+  "Ensure the current file or directory is in the project."
   (let ((root (binder-root)))
     (cond
      ;; The binder-project-directory matches root, we're all good.
@@ -380,8 +394,8 @@ Reads from `binder--cache' if valid, or from binder file if not."
      ;; change it to current project root.
      ((and (stringp binder-project-directory)
            (stringp root))
-      (when (y-or-n-p (format "Outside of current binder project %s
-Change binder directory to %s?"
+      (when (y-or-n-p (format "Outside of current project %s
+Switch project directory to %s?"
                               (abbreviate-file-name binder-project-directory)
                               (abbreviate-file-name root)))
         (binder-cd root)))
@@ -426,8 +440,7 @@ Change binder directory to %s?"
       (let ((prop-elt (assq prop item)))
         (if prop-elt
             (setcdr prop-elt value)
-          (push (cons prop value) (cdr item))))))
-  (setq binder--modification-time (current-time)))
+          (push (cons prop value) (cdr item)))))))
 
 (defun binder-get-item-index (fileid)
   "Return index position for binder item for FILEID."
@@ -884,10 +897,9 @@ When ARG is non-nil, visit in new window."
   (setq fileid (binder-file-relative-to-root fileid))
   (unless (binder-get-item fileid)
     (binder-insert-item fileid (1+ (binder-sidebar-get-index))))
-  (setq binder--modification-time (current-time))
+  (binder-write-maybe)
   (binder-sidebar-refresh)
-  (binder-sidebar-goto-item fileid)
-  (binder-write-maybe))
+  (binder-sidebar-goto-item fileid))
 
 (defun binder-sidebar-add-all-files ()
   "Add all files in current directory to binder."
@@ -914,10 +926,9 @@ When ARG is non-nil, do not prompt for confirmation."
     (when (or arg (y-or-n-p (format "Really remove %s?"
                                     (string-join fileid-list ", "))))
       (mapc #'binder-delete-item fileid-list)
-      (setq binder--modification-time (current-time))
       (setq binder--sidebar-marked nil)))
-  (binder-sidebar-refresh)
-  (binder-write-maybe))
+  (binder-write-maybe)
+  (binder-sidebar-refresh))
 
 (defun binder-sidebar-rename ()
   "Change display name of binder item at point."
@@ -928,18 +939,16 @@ When ARG is non-nil, do not prompt for confirmation."
           (read-string "New name: "
                        (or (binder-get-item-prop fileid 'display) fileid)))
     (binder-set-item-prop fileid 'display name)
-    (setq binder--modification-time (current-time))
-    (binder-sidebar-refresh)
-    (binder-write-maybe)))
+    (binder-write-maybe)
+    (binder-sidebar-refresh)))
 
 (defun binder-sidebar-relocate (filepath)
   "Change file path of binder item at point to FILEPATH."
   (interactive "fNew file path: ")
   (setq filepath (binder-file-relative-to-root filepath))
   (setcar (binder-get-item (binder-sidebar-get-fileid)) filepath)
-  (setq binder--modification-time (current-time))
-  (binder-sidebar-refresh)
-  (binder-write-maybe))
+  (binder-write-maybe)
+  (binder-sidebar-refresh))
 
 (defun binder-sidebar-toggle-include ()
   "Toggle whether marked items or item at point is included in `binder-sidebar-staple'."
@@ -949,16 +958,16 @@ When ARG is non-nil, do not prompt for confirmation."
     (binder-set-item-prop fileid 'include
                           (not (binder-get-item-prop fileid 'include))))
   (setq binder--sidebar-marked nil)
-  (binder-sidebar-refresh)
-  (binder-write-maybe))
+  (binder-write-maybe)
+  (binder-sidebar-refresh))
 
 (defun binder-sidebar-clear-include ()
   "Make no items included in `binder-sidebar-staple'."
   (interactive)
   (dolist (item (binder-get-structure))
     (binder-set-item-prop (car item) 'include nil))
-  (binder-sidebar-refresh)
-  (binder-write-maybe))
+  (binder-write-maybe)
+  (binder-sidebar-refresh))
 
 (defun binder-sidebar-set-status (status)
   "Set the status of marked items or item at point to STATUS."
@@ -972,8 +981,8 @@ When ARG is non-nil, do not prompt for confirmation."
                       (list (binder-sidebar-get-fileid))))
     (binder-set-item-prop fileid 'status status))
   (setq binder--sidebar-marked nil)
-  (binder-sidebar-refresh)
-  (binder-write-maybe))
+  (binder-write-maybe)
+  (binder-sidebar-refresh))
 
 (defun binder-sidebar-toggle-file-extensions ()
   "Toggle visibility of binder item file extensions."
@@ -996,10 +1005,10 @@ When ARG is non-nil, do not prompt for confirmation."
         item index)
     (setq item (binder-get-item fileid)
           index (binder-get-item-index fileid))
-    (when (<= 0 (+ index p) (1- (length (binder-get-structure))))
+    (when (<= 0 (+ index p) (1- (length (binder-filter-structure))))
       (binder-delete-item fileid)
       (binder-insert-item item (+ index p))
-      (setq binder--modification-time (current-time))
+      (binder-write-maybe)
       (binder-sidebar-refresh)
       (binder-sidebar-goto-item fileid))))
 
@@ -1080,7 +1089,7 @@ C-g = cancel: " '(?? ?m ?x ?q))))
              (if (assq 'default-extension binder--cache)
                  (setf (alist-get 'default-extension binder--cache) extension)
                (push (cons 'default-extension extension) binder--cache))))
-         (binder-write))))
+         (binder-write-maybe))))
 
 ;;;###autoload
 (defun binder-reveal-in-sidebar ()
