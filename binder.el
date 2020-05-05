@@ -198,6 +198,11 @@
   "Work with a structured project of files."
   :group 'files)
 
+(eval-when-compile
+  (require 'lisp-mnt)
+  (defconst binder-version
+    (lm-version load-file-name)))
+
 
 ;;; Core Variables
 
