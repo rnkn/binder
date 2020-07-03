@@ -190,18 +190,18 @@
 
 ;;; Code:
 
-(eval-when-compile (require 'cl-lib))
-(eval-when-compile (require 'subr-x))
+(eval-when-compile
+  (require 'cl-lib)
+  (require 'subr-x)
+  (require 'lisp-mnt)
+  (defconst binder-version
+    (lm-version load-file-name)))
+
 (require 'seq)
 
 (defgroup binder ()
   "Work with a structured project of files."
   :group 'files)
-
-(eval-when-compile
-  (require 'lisp-mnt)
-  (defconst binder-version
-    (lm-version load-file-name)))
 
 
 ;;; Core Variables
