@@ -735,6 +735,14 @@ Use `binder-toggle-sidebar' or `quit-window' to close the sidebar."
   :safe 'booleanp
   :group 'binder-sidebar)
 
+(defcustom binder-sidebar-resize-window-step
+  4
+  "Integer of columns by which to resize window.
+Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
+  :type 'integer
+  :safe 'integerp
+  :group 'binder-sidebar)
+
 (defvar binder--current-fileid nil)
 (defvar binder--sidebar-marked nil)
 
@@ -1064,6 +1072,20 @@ Added to `window-configuration-change-hook'."
     (when (window-live-p (get-buffer-window binder-sidebar-buffer))
       (setq binder--current-fileid (binder-get-buffer-fileid))
       (binder-sidebar-refresh-window))))
+
+(defun binder-sidebar-shrink-window ()
+  "Shrink the sidebar window horizontally.
+
+Calls `shrink-window-horizontally' with `binder-sidebar-resize-window-step'."
+  (interactive)
+  (shrink-window-horizontally binder-sidebar-resize-window-step))
+
+(defun binder-sidebar-enlarge-window ()
+  "Enlarge the sidebar window horizontally.
+
+Calls `enlarge-window-horizontally' with `binder-sidebar-resize-window-step'."
+  (interactive)
+  (enlarge-window-horizontally binder-sidebar-resize-window-step))
 
 (defun binder-sidebar-help (char)
   "Interactively set project-specific properties by CHAR."
