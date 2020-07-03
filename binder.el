@@ -306,28 +306,28 @@ any time with `binder-change-directory'."
 
 (defun binder-init-binder-file ()
   "Initialize an empty binder file."
-  (let ((directory
-         (or binder-project-directory default-directory)))
+  (let ((directory (or binder-project-directory default-directory)))
     (when (y-or-n-p (format "Initialize empty %s in %s? "
                             binder-default-file
                             (abbreviate-file-name directory)))
       (let ((binder-file
              (expand-file-name binder-default-file directory)))
-      (with-temp-buffer
-        (insert binder-file-header
-                (pp-to-string
-                 (list (cons 'structure nil)
-                       (cons 'default-stapled-mode binder-default-stapled-mode)
-                       (cons 'default-extension binder-default-file-extention))))
-        (write-file binder-file))
-      (binder-set-unmodified)
-      binder-file))))
+        (with-temp-buffer
+          (insert binder-file-header
+                  (pp-to-string
+                   (list (cons 'structure nil)
+                         (cons 'default-stapled-mode binder-default-stapled-mode)
+                         (cons 'default-extension binder-default-file-extention))))
+          (write-file binder-file))
+        (binder-set-unmodified)
+        binder-file))))
 
 (defun binder-find-project-file ()
   "Find or initialize current project file."
   (let ((binder-file
          (expand-file-name binder-default-file (binder-root))))
-    (if (file-exists-p binder-file) binder-file
+    (if (file-exists-p binder-file)
+        binder-file
       (binder-init-binder-file))))
 
 (defun binder-write ()
@@ -338,13 +338,14 @@ any time with `binder-change-directory'."
   ;;       (binder-get-structure))
   (let ((binder-file (binder-find-project-file)))
     (with-temp-buffer
-      (insert binder-file-header (pp-to-string binder--cache))
+      (insert binder-file-header
+              (pp-to-string binder--cache))
       (write-file binder-file)))
   (binder-set-unmodified))
 
 (defun binder-write-maybe ()
   "Write binder data if passed modified threshold."
-  (if (>= binder--modification-count binder-save-threshold)
+  (if (<= binder-save-threshold binder--modification-count)
       (binder-write)
     (binder-set-modified)))
 
@@ -353,6 +354,8 @@ any time with `binder-change-directory'."
 Reads from `binder--cache' if valid, or from binder file if not."
   (let ((binder-file (binder-find-project-file)))
     (unless binder-file (user-error "No binder file found"))
+    ;; If the binder--cache is invalid, offer to revert from disk, otherwise,
+    ;; write binder data.
     (when (and binder--cache
                (time-less-p binder--modification-time
                             (nth 5 (file-attributes binder-file))))
@@ -393,10 +396,8 @@ Reads from `binder--cache' if valid, or from binder file if not."
      ;; change it to current project root.
      ((and (stringp binder-project-directory)
            (stringp root))
-      (when (y-or-n-p (format "Outside of current project %s
-Switch project directory to %s?"
-                              (abbreviate-file-name binder-project-directory)
-                              (abbreviate-file-name root)))
+      (when (y-or-n-p (format "Outside of current project %s\nSwitch project directory to %s?"
+                              binder-project-directory root))
         (binder-cd root)))
      ;; The binder-project-directory is set but we're not in a project; this is
      ;; fine.
@@ -406,7 +407,7 @@ Switch project directory to %s?"
      ;; to set it to current project root.
      ((stringp root)
       (binder-cd root)
-      (message "Set binder directory to %s" (abbreviate-file-name root)))
+      (message "Set binder directory to %s" root))
      ;; A fresh project; offer to set project directory to default-directory.
      (t
       (when (y-or-n-p (format "Set binder directory to %s?"
