@@ -506,10 +506,6 @@ Filters in `binder-status-filter-in' or filters out
 
 ;;; Global Minor Mode
 
-(defvar binder-navigation-map (make-sparse-keymap))
-(defvar binder-mode-map (make-sparse-keymap))
-(set-keymap-parent binder-mode-map binder-navigation-map)
-
 (defun binder-save (&optional prompt)
   "Save project data (with prompt when PROMPT is non-nil)."
   (interactive)
@@ -610,12 +606,23 @@ one, otherwise insert at end."
   (let ((string (delete-and-extract-region beg end)))
     (binder-add-file fileid nil string)))
 
-(define-key binder-navigation-map (kbd "C-c ]") #'binder-next)
-(define-key binder-navigation-map (kbd "C-c [") #'binder-previous)
-(define-key binder-mode-map (kbd "C-c ;") #'binder-reveal-in-sidebar)
-(define-key binder-mode-map (kbd "C-c '") #'binder-toggle-sidebar)
-(define-key binder-mode-map (kbd "C-c \"") #'binder-toggle-notes)
-(define-key binder-mode-map (kbd "C-c :") #'binder-add-file)
+(defvar binder-navigation-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c ]") #'binder-next)
+    (define-key map (kbd "C-c [") #'binder-previous)
+    map)
+  "Navigational mode map for `binder-mode'.")
+
+(defvar binder-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c ;") #'binder-reveal-in-sidebar)
+    (define-key map (kbd "C-c '") #'binder-toggle-sidebar)
+    (define-key map (kbd "C-c \"") #'binder-toggle-notes)
+    (define-key map (kbd "C-c :") #'binder-add-file)
+    map)
+  "Main mode map for `binder-mode'.")
+
+(set-keymap-parent binder-mode-map binder-navigation-map)
 
 ;;;###autoload
 (define-minor-mode binder-mode
@@ -1133,44 +1140,50 @@ Unconditionally activates `binder-mode'."
     (when binder-sidebar-select-window
       (select-window (get-buffer-window binder-sidebar-buffer)))))
 
+(defvar binder-sidebar-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "?") #'binder-sidebar-help)
+    (define-key map (kbd "{") #'binder-sidebar-shrink-window)
+    (define-key map (kbd "}") #'binder-sidebar-enlarge-window)
+    (define-key map (kbd "g") #'binder-sidebar-refresh)
+    (define-key map (kbd "j") #'binder-sidebar-jump-to-current)
+    (define-key map (kbd "C") #'binder-sidebar-change-directory)
+    (define-key map (kbd "n") #'next-line)
+    (define-key map (kbd "p") #'previous-line)
+    (define-key map (kbd "RET") #'binder-sidebar-find-file)
+    (define-key map (kbd "o") #'binder-sidebar-find-file-other-window)
+    (define-key map (kbd "s") #'binder-sidebar-save)
+    (define-key map [remap save-buffer] #'binder-sidebar-save)
+    (define-key map (kbd "m") #'binder-sidebar-mark)
+    (define-key map (kbd "u") #'binder-sidebar-unmark)
+    (define-key map (kbd "t") #'binder-sidebar-set-status)
+    (define-key map (kbd "#") #'binder-sidebar-set-status)
+    (define-key map (kbd "U") #'binder-sidebar-unmark-all)
+    (define-key map (kbd "v") #'binder-sidebar-staple)
+    (define-key map (kbd "i") #'binder-sidebar-toggle-notes)
+    (define-key map (kbd "z") #'binder-sidebar-open-notes)
+    (define-key map (kbd "M-n") #'binder-sidebar-shift-down)
+    (define-key map (kbd "<M-down>") #'binder-sidebar-shift-down)
+    (define-key map (kbd "M-p") #'binder-sidebar-shift-up)
+    (define-key map (kbd "<M-up>") #'binder-sidebar-shift-up)
+    (define-key map (kbd "a") #'binder-sidebar-add-file)
+    (define-key map (kbd "A") #'binder-sidebar-add-all-files)
+    (define-key map (kbd "d") #'binder-sidebar-remove)
+    (define-key map (kbd "r") #'binder-sidebar-rename)
+    (define-key map (kbd "R") #'binder-sidebar-relocate)
+    (define-key map (kbd "E") #'binder-sidebar-toggle-file-extensions)
+    (define-key map (kbd "x") #'binder-sidebar-toggle-include)
+    (define-key map (kbd "X") #'binder-sidebar-clear-include)
+    (define-key map (kbd "/") #'binder-sidebar-filter-by-tag)
+    (define-key map (kbd "\\") #'binder-sidebar-clear-filter)
+    (define-key map (kbd "M-RET") #'binder-sidebar-new-file)
+    map))
+
 ;;;###autoload
 (define-derived-mode binder-sidebar-mode
   special-mode "Binder Sidebar"
   "Major mode for working with `binder' projects."
   (add-hook 'post-command-hook 'binder-sidebar-sync-notes t t))
-
-(define-key binder-sidebar-mode-map (kbd "?") #'binder-sidebar-help)
-(define-key binder-sidebar-mode-map (kbd "g") #'binder-sidebar-refresh)
-(define-key binder-sidebar-mode-map (kbd "j") #'binder-sidebar-jump-to-current)
-(define-key binder-sidebar-mode-map (kbd "C") #'binder-sidebar-change-directory)
-(define-key binder-sidebar-mode-map (kbd "n") #'next-line)
-(define-key binder-sidebar-mode-map (kbd "p") #'previous-line)
-(define-key binder-sidebar-mode-map (kbd "RET") #'binder-sidebar-find-file)
-(define-key binder-sidebar-mode-map (kbd "o") #'binder-sidebar-find-file-other-window)
-(define-key binder-sidebar-mode-map (kbd "s") #'binder-sidebar-save)
-(define-key binder-sidebar-mode-map [remap save-buffer] #'binder-sidebar-save)
-(define-key binder-sidebar-mode-map (kbd "m") #'binder-sidebar-mark)
-(define-key binder-sidebar-mode-map (kbd "u") #'binder-sidebar-unmark)
-(define-key binder-sidebar-mode-map (kbd "#") #'binder-sidebar-set-status)
-(define-key binder-sidebar-mode-map (kbd "U") #'binder-sidebar-unmark-all)
-(define-key binder-sidebar-mode-map (kbd "v") #'binder-sidebar-staple)
-(define-key binder-sidebar-mode-map (kbd "i") #'binder-sidebar-toggle-notes)
-(define-key binder-sidebar-mode-map (kbd "z") #'binder-sidebar-open-notes)
-(define-key binder-sidebar-mode-map (kbd "M-n") #'binder-sidebar-shift-down)
-(define-key binder-sidebar-mode-map (kbd "<M-down>") #'binder-sidebar-shift-down)
-(define-key binder-sidebar-mode-map (kbd "M-p") #'binder-sidebar-shift-up)
-(define-key binder-sidebar-mode-map (kbd "<M-up>") #'binder-sidebar-shift-up)
-(define-key binder-sidebar-mode-map (kbd "a") #'binder-sidebar-add-file)
-(define-key binder-sidebar-mode-map (kbd "A") #'binder-sidebar-add-all-files)
-(define-key binder-sidebar-mode-map (kbd "d") #'binder-sidebar-remove)
-(define-key binder-sidebar-mode-map (kbd "r") #'binder-sidebar-rename)
-(define-key binder-sidebar-mode-map (kbd "R") #'binder-sidebar-relocate)
-(define-key binder-sidebar-mode-map (kbd "E") #'binder-sidebar-toggle-file-extensions)
-(define-key binder-sidebar-mode-map (kbd "x") #'binder-sidebar-toggle-include)
-(define-key binder-sidebar-mode-map (kbd "X") #'binder-sidebar-clear-include)
-(define-key binder-sidebar-mode-map (kbd "/") #'binder-sidebar-filter-in)
-(define-key binder-sidebar-mode-map (kbd "\\") #'binder-sidebar-filter-out)
-(define-key binder-sidebar-mode-map (kbd "M-RET") #'binder-sidebar-new-file)
 
 
 ;;; Notes Major Mode
