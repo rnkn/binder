@@ -292,10 +292,7 @@ any time with `binder-change-directory'."
 
 (defun binder-root ()
   "Return the root directory with a binder file, or nil."
-  (let ((directory
-         (locate-dominating-file default-directory binder-default-file)))
-    (when (and directory (file-directory-p directory))
-      (expand-file-name directory))))
+  (locate-dominating-file default-directory binder-default-file))
 
 (defun binder-set-modified ()
   "Set the binder data as modified."
@@ -365,8 +362,8 @@ Reads from `binder--cache' if valid, or from binder file if not."
     ;; The cache is only valid if binder--cache is non-nil, and
     ;; binder-project-directory is the current binder-root.
     (unless (and binder--cache
-                 (string= (expand-file-name binder-project-directory)
-                          (binder-root)))
+                 (file-equal-p binder-project-directory
+                               (binder-root)))
       (with-temp-buffer
         (insert-file-contents binder-file)
         (goto-char (point-min))
@@ -376,8 +373,7 @@ Reads from `binder--cache' if valid, or from binder file if not."
 
 (defun binder-cd (directory)
   "Set `binder-project-directory' to DIRECTORY and erase cache."
-  (customize-set-variable 'binder-project-directory
-                          (expand-file-name directory))
+  (customize-set-variable 'binder-project-directory directory)
   (setq binder-status-filter-in nil
         binder-status-filter-out nil
         binder--notes-fileid nil
@@ -391,9 +387,7 @@ Reads from `binder--cache' if valid, or from binder file if not."
      ;; The binder-project-directory matches root, we're all good.
      ((and (stringp binder-project-directory)
            (stringp root)
-           (string= (directory-file-name
-                     (expand-file-name binder-project-directory))
-                    (directory-file-name root)))
+           (file-equal-p binder-project-directory root))
       t)
      ;; The binder-project-directory does not match project root; offer to
      ;; change it to current project root.
@@ -1134,11 +1128,9 @@ C-g = cancel: " '(?? ?m ?x ?q))))
 Unconditionally activates `binder-mode'."
   (interactive)
   (binder-mode)
-  (let ((filepath (or (buffer-file-name)
-                      (expand-file-name default-directory)))
-        (root (binder-root)))
+  (let ((filepath (or (buffer-file-name) default-directory)))
     (select-window (binder-sidebar-create-window))
-    (if (string= filepath root)
+    (if (file-equal-p filepath (binder-root))
         (binder-sidebar-refresh)
       (let ((fileid (binder-file-relative-to-root filepath)))
         (setq binder--current-fileid fileid)
@@ -1301,10 +1293,8 @@ If argument SELECT is non-nil, select the notes window."
   (binder-ensure-in-project)
   (if (eq major-mode 'binder-sidebar-mode)
       (setq binder--notes-fileid (binder-sidebar-get-fileid))
-    (let ((filepath (or (buffer-file-name)
-                        (expand-file-name default-directory)))
-          (root (binder-root)))
-      (unless (string= filepath root)
+    (let ((filepath (or (buffer-file-name) default-directory)))
+      (unless (file-equal-p filepath (binder-root))
         (setq binder--notes-fileid (binder-file-relative-to-root filepath)))))
   (if (window-live-p (get-buffer-window binder-notes-buffer))
       (binder-notes-refresh-window)
