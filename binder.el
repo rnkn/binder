@@ -423,7 +423,7 @@ Switch project directory to %s?"
 (defun binder-file-relative-to-root (filepath)
   "Return FILEPATH relative to binder root directory."
   (string-trim (expand-file-name filepath)
-               (expand-file-name binder-project-directory)))
+               (expand-file-name (or binder-project-directory ""))))
 
 (defun binder-get-structure ()
   "Return binder data structure component."
