@@ -1069,9 +1069,8 @@ When ARG is non-nil, do not prompt for confirmation."
 Added to `window-configuration-change-hook'."
   (unless (or (minibuffer-window-active-p (selected-window))
               (eq major-mode 'binder-sidebar-mode))
-    (when (window-live-p (get-buffer-window binder-sidebar-buffer))
-      (setq binder--current-fileid (binder-get-buffer-fileid))
-      (binder-sidebar-refresh-window))))
+    (setq binder--current-fileid (binder-get-buffer-fileid))
+    (binder-sidebar-refresh-window)))
 
 (defun binder-sidebar-shrink-window ()
   "Shrink the sidebar window horizontally.
