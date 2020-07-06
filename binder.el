@@ -216,6 +216,8 @@
 (defvar binder--cache nil)
 (defvar binder--modification-time nil)
 (defvar binder--modification-count 0)
+(defvar binder-narrow-tags nil)
+(defvar binder-exclude-tags nil)
 (defvar binder-status-filter-in nil)
 (defvar binder-status-filter-out nil)
 
@@ -282,9 +284,9 @@ any time with `binder-change-directory'."
   "Default face for missing items."
   :group 'binder-sidebar-faces)
 
-(defface binder-sidebar-status
+(defface binder-sidebar-tags
   '((t (:inherit (font-lock-variable-name-face))))
-  "Default face for status labels."
+  "Default face for tags."
   :group 'binder-sidebar-faces)
 
 
@@ -420,9 +422,22 @@ Reads from `binder--cache' if valid, or from binder file if not."
   (string-trim (expand-file-name filepath)
                (expand-file-name (or binder-project-directory ""))))
 
-(defun binder-get-structure ()
-  "Return binder data structure component."
-  (alist-get 'structure (binder-read)))
+(defun binder-get-structure (&optional narrow-tags exclude-tags)
+  "Return binder data structure component.
+With optional list of strings NARROW-TAGS, narrow results to only
+items with those tags. Likewise with EXCLUDE-TAGS, narrow results
+to only items without those tags."
+  (seq-filter
+   (lambda (item)
+     (and (seq-every-p
+           (lambda (tag)
+             (member tag (alist-get 'tags item)))
+           narrow-tags)
+          (seq-every-p
+           (lambda (tag)
+             (not (member tag (alist-get 'tags item))))
+           exclude-tags)))
+   (alist-get 'structure (binder-read))))
 
 (defun binder-get-item (fileid)
   "Return binder item association list for FILEID."
@@ -435,16 +450,28 @@ Reads from `binder--cache' if valid, or from binder file if not."
 (defun binder-set-item-prop (fileid prop value)
   "Set VALUE of PROP for binder item for FILEID."
   (let ((item (binder-get-item fileid)))
-    (if (string-empty-p value)
+    (if (or (null value) (and (stringp value) (string-empty-p value)))
         (setf item (assq-delete-all prop item))
       (let ((prop-elt (assq prop item)))
         (if prop-elt
             (setcdr prop-elt value)
           (push (cons prop value) (cdr item)))))))
 
+(defun binder-add-to-item-prop (fileid prop value)
+  "Add VALUE to PROP for binder item for FILEID."
+  (let ((prop-elt (binder-get-item-prop fileid prop)))
+    (unless (member value prop-elt)
+      (binder-set-item-prop fileid prop (push value prop-elt)))))
+
+(defun binder-remove-from-item-prop (fileid prop value)
+  (let ((prop-elt (binder-get-item-prop fileid prop)))
+    (when (member value (binder-get-item-prop fileid 'tags))
+      (binder-set-item-prop fileid prop (remove value prop-elt)))))
+
 (defun binder-get-item-index (fileid)
   "Return index position for binder item for FILEID."
-  (seq-position (binder-filter-structure) (binder-get-item fileid)))
+  (seq-position (binder-get-structure binder-narrow-tags)
+                (binder-get-item fileid)))
 
 (defun binder-insert-item (item index)
   "Insert binder ITEM at position INDEX."
@@ -528,7 +555,8 @@ Or visit Nth previous file if N is negative."
   (when (binder-ensure-in-project)
     ;; Find the current file/directory fileid, if one.
     (let ((this-fileid (binder-get-buffer-fileid))
-          (structure (binder-filter-structure))
+          (structure (binder-get-structure
+                      binder-narrow-tags binder-exclude-tags))
           index next-index)
       ;; If current file has an INDEX, get the NEXT-INDEX.
       (setq index (or (binder-get-item-index this-fileid) 0)
@@ -677,9 +705,9 @@ See `display-buffer-in-side-window' for example options."
   :safe 'booleanp
   :group 'binder-sidebar)
 
-(defcustom binder-sidebar-status-column
+(defcustom binder-sidebar-tags-column
   25
-  "Integer for column to align status tags."
+  "Integer for column to align tags."
   :type 'integer
   :safe 'integerp
   :group 'binder-sidebar)
@@ -698,9 +726,9 @@ See `display-buffer-in-side-window' for example options."
   :safe 'characterp
   :group 'binder-sidebar)
 
-(defcustom binder-sidebar-status-char
+(defcustom binder-sidebar-tags-char
   ?#
-  "Character to prefix to item status."
+  "Character to prefix to item tags."
   :type 'character
   :safe 'characterp
   :group 'binder-sidebar)
@@ -741,28 +769,33 @@ Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
 (defvar binder--current-fileid nil)
 (defvar binder--sidebar-marked nil)
 
-(defun binder-sidebar-refresh (&optional interactive)
-  "Redraw binder sidebar, reading from cache."
+(defun binder-sidebar-format-header-line ()
+  (setq header-line-format
+        (list :propertize (abbreviate-file-name binder-project-directory)
+              'face 'bold)))
+
+(defun binder-sidebar-refresh (&optional clear-filter)
+  "Redraw binder sidebar, reading from cache.
+When called interactively (or with optional CLEAR-FILTER) clear
+filter by tags."
   (interactive "p")
   (with-silent-modifications
-    (setq default-directory binder-project-directory
-          header-line-format
-          (list :propertize (abbreviate-file-name binder-project-directory)
-                'face 'bold))
-    (when interactive
-      (setq binder-status-filter-in nil
-            binder-status-filter-out nil))
+    (setq default-directory binder-project-directory)
+    (binder-sidebar-format-header-line)
+    (when clear-filter (setq binder-narrow-tags nil
+                             binder-exclude-tags nil))
     (let ((x (point)))
       (erase-buffer)
-      (dolist (item (binder-filter-structure))
-        (let ((fileid (car item))
-              (include (alist-get 'include item))
-              (display (alist-get 'display item))
-              (notes (alist-get 'notes item))
-              (status (alist-get 'status item))
-              marked missing status-overwrite)
-          ;; Set whether FILEID is MARKED and MISSING.
-          (when (member fileid binder--sidebar-marked)
+      (mapc
+       (lambda (item)
+         (let ((fileid   (car item))
+               (include  (alist-get 'include item))
+               (display  (alist-get 'display item))
+               (notes    (alist-get 'notes item))
+               (tags     (alist-get 'tags item))
+               marked missing tags-overwrite)
+           ;; Set whether FILEID is MARKED and MISSING.
+           (when (member fileid binder--sidebar-marked)
             (setq marked t))
           (when (not (file-exists-p fileid))
             (setq missing t))
@@ -799,23 +832,26 @@ Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
           (when marked
             (put-text-property (line-beginning-position) (line-end-position)
                                'face 'binder-sidebar-marked))
-          ;; Add the item STATUS with a hashtag, because hashtags are
-          ;; cool, right?
-          (when (and status (< 0 (string-width status)))
-            (move-to-column (1- binder-sidebar-status-column))
-            (unless (eolp) (setq status-overwrite t))
-            (move-to-column binder-sidebar-status-column)
-            (indent-to-column binder-sidebar-status-column)
-            (let ((x (point)))
-              (delete-region (1- x) (line-end-position))
-              (insert (if status-overwrite "~" " ")
-                      binder-sidebar-status-char status)
-              (put-text-property x (line-end-position)
-                                 'face 'binder-sidebar-status)))
+          ;; Add the item TAGS with a hashtag, because hashtags are cool, right?
+          (when tags
+            (move-to-column (1- binder-sidebar-tags-column))
+            (unless (eolp) (setq tags-overwrite t))
+            (move-to-column binder-sidebar-tags-column)
+            (indent-to-column binder-sidebar-tags-column)
+            (let ((tags-col  (point))
+                  (tags-char (char-to-string binder-sidebar-tags-char)))
+              (delete-region (1- tags-col) (line-end-position))
+              (insert (if tags-overwrite "~" " ")
+                      tags-char
+                      (string-join tags (concat " " tags-char)))
+              (put-text-property tags-col (line-end-position)
+                                 'face 'binder-sidebar-tags)))
           (insert "\n")
           (when (string= fileid binder--current-fileid)
-            (put-text-property (line-beginning-position 0) (line-beginning-position)
+            (put-text-property (line-beginning-position 0)
+                               (line-beginning-position)
                                'face 'binder-sidebar-highlight))))
+       (binder-get-structure binder-narrow-tags binder-exclude-tags))
       (goto-char x))))
 
 (defun binder-sidebar-refresh-window ()
@@ -986,6 +1022,35 @@ When ARG is non-nil, do not prompt for confirmation."
   (binder-write-maybe)
   (binder-sidebar-refresh))
 
+(defun binder-sidebar-add-tag (tag)
+  "Add TAG to marked items or item at point."
+  (interactive
+   (list (completing-read
+          "Add tag: " (binder-get-tags))))
+  (mapc
+   (lambda (fileid)
+     (binder-add-to-item-prop fileid 'tags tag))
+   (or binder--sidebar-marked
+       (list (binder-sidebar-get-fileid))))
+  (setq binder--sidebar-marked nil)
+  (binder-write-maybe)
+  (binder-sidebar-refresh))
+
+(defun binder-sidebar-remove-tag (tag)
+  "Remove TAG to marked items or item at point."
+  (interactive
+   (list (completing-read
+          "Remove tag: "
+          (binder-get-item-prop (binder-sidebar-get-fileid) 'tags))))
+  (mapc
+   (lambda (fileid)
+     (binder-remove-from-item-prop fileid 'tags tag))
+   (or binder--sidebar-marked
+       (list (binder-sidebar-get-fileid))))
+  (setq binder--sidebar-marked nil)
+  (binder-write-maybe)
+  (binder-sidebar-refresh))
+
 (defun binder-sidebar-set-status (status)
   "Set the status of marked items or item at point to STATUS."
   (interactive
@@ -1023,7 +1088,8 @@ When ARG is non-nil, do not prompt for confirmation."
         item index)
     (setq item (binder-get-item fileid)
           index (binder-get-item-index fileid))
-    (when (<= 0 (+ index p) (1- (length (binder-filter-structure))))
+    (when (<= 0 (+ index p)
+              (1- (length (binder-get-structure binder-narrow-tags))))
       (binder-delete-item fileid)
       (binder-insert-item item (+ index p))
       (binder-write-maybe)
@@ -1040,23 +1106,25 @@ When ARG is non-nil, do not prompt for confirmation."
   (interactive)
   (binder-sidebar-goto-item binder--current-fileid))
 
-(defun binder-sidebar-filter-in (status)
-  "Filter items to only include items with STATUS."
+(defun binder-sidebar-narrow-by-tag (tag)
+  "Filter sidebar items to include items with TAG."
   (interactive
    (list (completing-read
-          "Filter in status: " (binder-get-prop-list 'status))))
-  (setq binder-status-filter-in
-        (if (string-empty-p status) nil status))
-  (binder-sidebar-refresh))
+          "Narrow items by tag: " (binder-get-tags)
+          nil t)))
+  (unless (or (string-empty-p tag) (member tag binder-narrow-tags))
+    (push tag binder-narrow-tags)
+    (binder-sidebar-refresh)))
 
-(defun binder-sidebar-filter-out (status)
-  "Filter items to exclude items with STATUS."
+(defun binder-sidebar-exclude-by-tag (tag)
+  "Filter sidebar items to exclude items with TAG."
   (interactive
    (list (completing-read
-          "Filter out status: " (binder-get-prop-list 'status))))
-  (setq binder-status-filter-out
-        (if (string-empty-p status) nil status))
-  (binder-sidebar-refresh))
+          "Exclude items by tag: " (binder-get-tags)
+          nil t)))
+  (unless (or (string-empty-p tag) (member tag binder-exclude-tags))
+    (push tag binder-exclude-tags)
+    (binder-sidebar-refresh)))
 
 (defun binder-highlight-in-sidebar ()
   "Highlight the current file in sidebar.
@@ -1170,8 +1238,9 @@ Unconditionally activates `binder-mode'."
     (define-key map [remap save-buffer] #'binder-sidebar-save)
     (define-key map (kbd "m") #'binder-sidebar-mark)
     (define-key map (kbd "u") #'binder-sidebar-unmark)
-    (define-key map (kbd "t") #'binder-sidebar-set-status)
-    (define-key map (kbd "#") #'binder-sidebar-set-status)
+    (define-key map (kbd "t") #'binder-sidebar-add-tag)
+    (define-key map (kbd "T") #'binder-sidebar-remove-tag)
+    (define-key map (kbd "#") #'binder-sidebar-add-tag)
     (define-key map (kbd "U") #'binder-sidebar-unmark-all)
     (define-key map (kbd "v") #'binder-sidebar-staple)
     (define-key map (kbd "i") #'binder-sidebar-toggle-notes)
@@ -1188,8 +1257,8 @@ Unconditionally activates `binder-mode'."
     (define-key map (kbd "E") #'binder-sidebar-toggle-file-extensions)
     (define-key map (kbd "x") #'binder-sidebar-toggle-include)
     (define-key map (kbd "X") #'binder-sidebar-clear-include)
-    (define-key map (kbd "/") #'binder-sidebar-filter-by-tag)
-    (define-key map (kbd "\\") #'binder-sidebar-clear-filter)
+    (define-key map (kbd "/") #'binder-sidebar-narrow-by-tag)
+    (define-key map (kbd "\\") #'binder-sidebar-exclude-by-tag)
     (define-key map (kbd "M-RET") #'binder-sidebar-new-file)
     map))
 
@@ -1413,7 +1482,7 @@ See `binder-sidebar-toggle-include'."
   (let ((item-list
          (seq-filter
           (lambda (item) (alist-get 'include item))
-          (binder-filter-structure))))
+          (binder-get-structure binder-narrow-tags))))
     (with-current-buffer (get-buffer-create binder-staple-buffer)
       (with-silent-modifications
         (erase-buffer)
