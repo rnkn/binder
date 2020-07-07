@@ -2,7 +2,7 @@
 
 ;; Copyright (c) 2020  Paul William Rankin
 
-;; Author: William Rankin <code@william.bydasein.com>
+;; Author: William Rankin <william@bydasein.com>
 ;; Keywords: files, outlines, wp, text
 ;; Version: 0.2.0
 ;; Package-Requires: ((emacs "25.3"))
