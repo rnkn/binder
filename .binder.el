@@ -13,13 +13,13 @@
    (display . "tutorial/foo"))
   ("tutorial/sidebar.txt"
    (include . t)
-   (tags "tutorial"))
+   (tags "tutorial" "foo"))
   ("tutorial/navigating.txt"
    (include . t)
-   (tags "tutorial"))
+   (tags "tutorial" "foo" "bar"))
   ("tutorial/stapling.txt"
    (include . t)
-   (tags "tutorial"))
+   (tags "tutorial" "bar"))
   ("tutorial/stapling-2.txt"
    (display . "tutorial/editing stapled stuff")
    (tags "tutorial"))
@@ -39,5 +39,5 @@
   ("tutorial/end.txt"
    (display . "tutorial/The End")
    (tags "tutorial")))
- (default-stapled-mode . text-mode)
+ (default-concat-mode . text-mode)
  (default-extension . "txt"))
