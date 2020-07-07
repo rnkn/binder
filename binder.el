@@ -496,30 +496,32 @@ to only items without those tags."
                value)))
          (binder-get-structure))))
 
+(defun binder-get-tags (&optional current)
+  (let (tags)
+    (mapc
+     (lambda (item)
+       (mapc
+        (lambda (tag)
+          (push tag tags))
+        (alist-get 'tags item)))
+     (binder-get-structure (when current binder-narrow-tags)
+                           (when current binder-exclude-tags)))
+    (seq-uniq tags 'string-equal)))
+
 (defun binder-get-buffer-fileid ()
   "Return buffer binder fileid."
   (binder-file-relative-to-root
    (or (buffer-file-name) (expand-file-name default-directory))))
 
 (defun binder-filter-structure ()
-  "Return binder structure filtered by status.
-
-Filters in `binder-status-filter-in' or filters out
-`binder-status-filter-out'."
-  (let ((structure (binder-get-structure)))
-    (if binder-status-filter-in
-        (setq structure
-              (seq-filter
-               (lambda (item)
-                 (string= (alist-get 'status item) binder-status-filter-in))
-               structure))
-      (when binder-status-filter-out
-        (setq structure
-              (seq-remove
-               (lambda (item)
-                 (string= (alist-get 'status item) binder-status-filter-out))
-               structure))))
-    structure))
+  "Return binder structure filtered by `binder-narrow-tags'."
+  (seq-filter
+   (lambda (item)
+     (seq-every-p
+      (lambda (tag)
+        (member tag (alist-get 'tags item)))
+      binder-narrow-tags))
+   (binder-get-structure)))
 
 (defun binder-exit-hook ()
   "Ensure project data is saved on exit."
