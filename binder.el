@@ -27,148 +27,177 @@
 
 ;; # Binder #
 
-;; **Warning: this is alpha-level software. Although it does not touch files on
-;; disk, you should consider all binder data (project structure, notes, statuses)
-;; as susceptible to loss. Key bindings, variable and function names, and overall
-;; program design are subject to change.**
+;; **Warning: this is alpha-level software. Although it does not touch
+;; files on disk, you should consider all binder data (project structure,
+;; notes, statuses) as susceptible to loss. Key bindings, variable and
+;; function names, and overall program design are subject to change.**
 
-;; Binder is global minor mode (and associated major modes) to facilitate working
-;; on a writing project in multiple files. It is heavily inspired by the binder
-;; feature in the [macOS writing app Scrivener][scriv].
+;; Binder is global minor mode (and associated major modes) to facilitate
+;; working on a writing project in multiple files. It is heavily inspired
+;; by the binder feature in the [macOS writing app Scrivener][scriv].
 
-;; The rationale behind working this way is to split a large writing project into
-;; much smaller pieces.
+;; The rationale behind working this way is to split a large writing
+;; project into much smaller pieces.
 
-;; [scriv]: https://www.literatureandlatte.com/scrivener/features?os=macOS
+;; [scriv]: https://www.literatureandlatte.com/scrivener/
 
 ;; ## Features ##
 
-;; Primarily, Binder provides a global minor mode binder-mode. This allows
-;; working with files in the current binder data, which is saved in a .binder.el
-;; file in the current directory. (You can change the name of this file is
+;; Primarily, Binder provides a global minor mode binder-mode. This
+;; allows working with files in the current binder-project-directory.
+;; Data concerning these files is saved in a .binder.el file in the
+;; project directory. (You can change the name of this file with the
 ;; binder-default-file option.)
 
-;; At this top-level, the main interaction with your binder will be in navigating
-;; back and forth between binder files:
+;; ## Navigation ##
 
-;; - binder-next (bound to C-c ]) visits the next file in the binder, and
-;; - binder-previous (bound to C-c [) visits the previous.
+;; At the most basic level, you can navigate back and forth through the
+;; files in a project:
 
-;; Calling these commands activates a transient map so that each command can be
-;; repeated by repeating only the last key.
+;; - binder-next (C-c ]) visits the next file in the binder, and
+;; - binder-previous (C-c [) visits the previous.
 
-;; You probably want some idea of the structure of your binder project...
+;; Calling these commands activates a transient map so that each command
+;; can be repeated by repeating only the last key.
 
-;; - binder-reveal-in-sidebar (bound to C-c ;) will find the current file in
-;;   the binder sidebar (see below) or call binder-init-binder-file if there is
-;;   none.
-;; - binder-toggle-sidebar (bound to C-c ') toggles the visibility of the
-;;   binder sidebar.
+;; ## Sidebar ##
 
-;; And when you're writing and want to quickly add something new, you can with...
+;; You'll mostly interact with the project structure via the sidebar.
 
-;; - binder-add-file (bound to C-c :) prompts for a file-name and adds this
-;;   possibly non-existent file to the binder after the current file's index. If no
-;;   file-name extension is provided, use value of the binder's default-extension
-;;   property (set with binder-default-file-extention option).
+;; - binder-toggle-sidebar (C-c ') toggles the visibility of the binder
+;;   sidebar.
+;; - binder-reveal-in-sidebar (C-c ;) finds the current file in the
+;;   sidebar.
 
-;; ### Binder Sidebar Mode ###
-
-;; A major mode for displaying the binder sidebar. This is where your main
-;; interaction with the binder happens.
-
-;; Binder items are displayed in a linear ordered list. Calling
+;; Each project item is a file, referenced relative to the project
+;; directory. Project items are displayed in a linear ordered list. Calling
 ;; binder-sidebar-find-file (bound to RET) or
 ;; binder-sidebar-find-file-other-window (bound to o) will visit the
 ;; corresponding file.
 
-;; Each item in the binder sidebar displays the following information:
+;; Each item in the sidebar displays the following information:
 
-;; 1. binder-sidebar-include-char (default x) denotes that this item has a
-;;    non-nil value for its include property and therefore is included in
-;;    binder-stable-mode (see below).
-;; 2. binder-sidebar-notes-char (default *) denotes that this item has a string
-;;    value for its notes property, which can be edited in binder-notes-mode
-;;    (see below), or
-;; 3. binder-sidebar-missing-char (defautl ?) denote that the item's
+;; 1. binder-sidebar-include-char (default x) denotes that this item is
+;;    included when the project is "joined" (see below).
+;; 2. binder-sidebar-notes-char (default *) denotes that this item has
+;;    some notes, which can be edited in binder-notes-mode (see below),
+;;    or...
+;; 3. binder-sidebar-missing-char (default ?) denote that the item's
 ;;    corresponding file cannot be found, but can be relocated by calling
-;;    binder-sidebar-relocate (bound to R).
-;; 4. The item name, either the car of the item element or its display
-;;    property, which can be set by calling binder-sidebar-rename (bound to r).
-;; 5. The item status property value, prefixed with binder-sidebar-status-char
-;;    (default #). The display of this value can be set with the
-;;    binder-sidebar-status-column option.
+;;    binder-sidebar-relocate (R).
+;; 4. The item name, which is either the file relative to the project
+;;    directory or an arbitrary display name, which can be set by calling
+;;    binder-sidebar-rename (r).
+;; 5. The item tags, each prefixed with binder-sidebar-status-char
+;;    (default #). The tags column can be set with the
+;;    binder-sidebar-tags-column option.
 
-;; Add an item with binder-sidebar-add-file (bound to a) or add all files in
-;; directory with binder-sidebar-add-all-files (bound to A). Add a new file
-;; with binder-sidebar-new-file (bound to M-RET). Remove items with
-;; binder-sidebar-remove (bound to d) -- this *does not delete the files*, only
-;; removes them from the binder.
+;; To add an item, call binder-sidebar-add-file (a) or add all files in
+;; directory with binder-sidebar-add-all-files (A).
 
-;; Items can be reordered with binder-sidebar-shift-up (bound to M-p & M-up)
-;; and binder-sidebar-shift-down (bound to M-n & M-down).
+;; Add a new file with binder-sidebar-new-file (M-RET). This prompts
+;; for a file-name and adds this (possibly non-existent) file to the
+;; project after the current file's index. If no file-name extension is
+;; provided, use value of the current project's default-extension
+;; property (default set with binder-default-file-extention option).
 
-;; Each item's include state is toggled with binder-sidebar-toggle-include (bound
-;; to x).
+;; Files can also be added to a project from outside the sidebar with
+;; binder-add-file (C-c :).
 
-;; Each item can be given a status with binder-sidebar-set-status (bound to #).
-;; Filter item by including or excluding a status with binder-sidebar-filter-in
-;; (bound to /) and binder-sidebar-filter-out (bound to \). To clear a
-;; status, just set an empty string. (n.b. Each command filter in/out only a single
-;; status, therefore it won't make sense to use them in conjunction.)
+;; Remove items with binder-sidebar-remove (d) -- this *does not delete
+;; the files*, only removes them from the project, but it *does delete* the
+;; corresponding notes and tags.
 
-;; The notes buffer (see below) can be accessed with either
-;; binder-sidebar-open-notes (bound to z) or binder-sidebar-toggle-notes
-;; (bound to i).
+;; Items can be reordered with binder-sidebar-shift-up (M-p or M-up)
+;; and binder-sidebar-shift-down (M-n or M-down).
 
-;; Hide item file extensions by setting the binder-sidebar-hide-file-extensions
-;; option. This can be toggled with binder-sidebar-toggle-file-extensions (bound
-;; to E).
+;; Hide item file extensions by setting the
+;; binder-sidebar-hide-file-extensions option. This can be toggled with
+;; binder-sidebar-toggle-file-extensions (E).
+
+;; The sidebar can be resized with binder-sidebar-shrink-window ({) and
+;; binder-sidebar-enlarge-window (}). The window size is changed by the
+;; number of columns specified in option
+;; binder-sidebar-resize-window-step.
 
 ;; You can customize how the sidebar window is displayed by setting
 ;; binder-sidebar-display-alist option.
 
-;; (There is a "mark" functionality, but this is yet to be implemented beyond just
-;; temporarily making items look marked.)
+;; ### Tags ###
 
-;; ### Binder Notes Mode ###
+;; A project is strictly a linear list. As your project grows, you may find
+;; the number of items becomes unweidly. Tags can help organize a project.
+;; An item can have any number of tags.
 
-;; A major mode for editing binder notes.
+;; Add a tag to an item with binder-sidebar-add-tag (t). Remove a tag
+;; from an item with binder-sidebar-remove-tag (T).
 
-;; Notes are only saved to the binder when calling binder-notes-commit (bound to
-;; C-c C-c). Calling quit-window (bound to C-c C-q) or binder-toggle-sidebar
-;; does not save notes.
+;; Items listed in the sidebar can be narrowed to only show items with a
+;; certain tag with binder-sidebar-narrow-by-tag (/) and/or only show
+;; items without a certain tag with binder-sidebar-exclude-by-tag (\).
+;; Each of these commands can be called multiple times with additional
+;; tags. Reset the sidebar with binder-sidebar-refresh (g).
 
-;; By default, the notes window will update to the corresponding item notes
-;; whenever the cursor moves in the binder sidebar. This may be disconcerting, so
-;; you can change it by setting the binder-notes-keep-in-sync option.
+;; ### Marking ###
 
-;; If the notes side window feels too small, you can pop the buffer out to a
-;; regular sized window with binder-notes-expand-window (bound to C-c C-l).
+;; Multiple items can be marked to add tags or toggle include state.
+
+;; Call binder-sidebar-mark (m) to mark an item. Call
+;; binder-sidebar-unmark (u) to unmark an item or
+;; binder-sidebar-unmark-all (U) for all sidebar items.
+
+;; ## Notes ##
+
+;; Project items can have notes, which are stored within the project file.
+
+;; To open the notes buffer from the sidebar, call either
+;; binder-sidebar-open-notes (z) or binder-sidebar-toggle-notes
+;; (i). To open a project file's notes when visiting that file, call
+;; binder-toggle-notes (C-c ").
+
+;; n.b. *Notes are not automatically saved*.
+
+;; Calling quit-window (C-c C-q) or binder-toggle-sidebar does not
+;; save notes. You need to call either binder-notes-save (C-x C-s) or
+;; binder-notes-save-and-quit-window (C-c C-c).
+
+;; You can embiggen the notes window, to pop it out from the sidebar and
+;; edit like a regular buffer window, with binder-notes-expand-window
+;; (C-c C-l).
+
+;; If you want the notes buffer to stay in sync with the item under the
+;; cursor in the sidebar, change the option binder-notes-keep-in-sync,
+;; but again, notes are not automatically saved!
 
 ;; You can customize how the notes window is displayed by setting
 ;; binder-notes-display-alist option.
 
-;; ### Binder Staple Mode ###
+;; ## Concatenate ##
 
-;; A minor mode for "stapling" binder files together.
+;; A writing project written in discrete pieces probably has an end goal of
+;; being put together. Each Binder project item has a property of being
+;; "included" or not. In the sidebar, an item's include state is toggled
+;; with binder-sidebar-toggle-include (x).
 
-;; When calling binder-sidebar-staple (bound to v), items marked as included in
-;; the binder will be concatenated in a new buffer, separated by
-;; binder-staple-separator string.
+;; When calling binder-sidebar-concat (c or v), project items marked
+;; as included will be concatenated in a new buffer (separated by
+;; binder-concat-separator string.)
 
-;; In this buffer, calling binder-staple-find-original-file (bound to M-RET)
-;; will visit the original file corresponding to the text at point.
+;; In this buffer, calling binder-concat-find-original-file (bound to
+;; M-RET) will visit the original file corresponding to the text at
+;; point.
 
 ;; ## Why not just use Org Mode? ##
 
-;; [Org Mode] is nice, but it's also a very *heavy* tool that almost insists that
-;; everything be done within Org Mode. This isn't useful if you want to write in a
-;; different format, e.g. [Markdown] or [Fountain].
+;; [Org Mode] is nice, but it's also a very *heavy* tool that almost
+;; insists that everything be done within Org Mode. This isn't useful if
+;; you want to write in a different format, e.g. [Markdown] or
+;; [Fountain].
 
-;; Also, I prefer to keep my writing in a collection of separate text files. It
-;; feels nicer to work on something small and self-contained than to organize a
-;; large file with headings and use indirect buffers with narrowing.
+;; Also, I prefer to keep my writing in a collection of separate text
+;; files. It feels nicer to work on something small and self-contained than
+;; to organize a large file with headings and use indirect buffers with
+;; narrowing.
 
 ;; [org mode]: https://orgmode.org
 ;; [markdown]: http://jblevins.org/projects/markdown-mode/
@@ -184,8 +213,8 @@
 
 ;; ## Start Here ##
 
-;; This file is part of a sample binder project. Enabled binder-mode and type C-c ;
-;; to reveal this file in the binder siderbar.
+;; This file is part of a Binder tutorial project. Enabled binder-mode
+;; and type C-c ; to reveal this file in the binder siderbar.
 
 
 ;;; Code:
