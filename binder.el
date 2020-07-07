@@ -4,7 +4,7 @@
 
 ;; Author: William Rankin <code@william.bydasein.com>
 ;; Keywords: files, outlines, wp, text
-;; Version: 0.1.0
+;; Version: 0.2.0
 ;; Package-Requires: ((emacs "25.3"))
 ;; URL: https://github.com/rnkn/binder
 
