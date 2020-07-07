@@ -318,7 +318,7 @@ any time with `binder-change-directory'."
           (insert binder-file-header
                   (pp-to-string
                    (list (cons 'structure nil)
-                         (cons 'default-stapled-mode binder-default-stapled-mode)
+                         (cons 'default-concat-mode binder-default-concat-mode)
                          (cons 'default-extension binder-default-file-extention))))
           (write-file binder-file))
         (binder-set-unmodified)
@@ -1004,7 +1004,7 @@ When ARG is non-nil, do not prompt for confirmation."
   (binder-sidebar-refresh))
 
 (defun binder-sidebar-toggle-include ()
-  "Toggle whether marked items or item at point is included in `binder-sidebar-staple'."
+  "Toggle whether marked items or item at point is included in `binder-sidebar-concat'."
   (interactive)
   (dolist (fileid (or binder--sidebar-marked
                       (list (binder-sidebar-get-fileid))))
@@ -1015,7 +1015,7 @@ When ARG is non-nil, do not prompt for confirmation."
   (binder-sidebar-refresh))
 
 (defun binder-sidebar-clear-include ()
-  "Make no items included in `binder-sidebar-staple'."
+  "Make no items included in `binder-sidebar-concat'."
   (interactive)
   (dolist (item (binder-get-structure))
     (binder-set-item-prop (car item) 'include nil))
@@ -1154,7 +1154,7 @@ Calls `enlarge-window-horizontally' with `binder-sidebar-resize-window-step'."
   (declare (interactive-only t))
   (interactive
    (list (read-char-choice "? = describe-mode, \
-m = set project default-stapled-mode, \
+m = set project default-concat-mode, \
 x = set project default-file-extension, \
 q = quit-window, \
 C-g = cancel: " '(?? ?m ?x ?q))))
@@ -1166,7 +1166,7 @@ C-g = cancel: " '(?? ?m ?x ?q))))
          (let ((mode
                 (intern-soft
                  (completing-read
-                  "Default stapled mode: "
+                  "Default concat mode: "
                   (let (collection)
                     (mapatoms
                      (lambda (atom)
@@ -1176,9 +1176,9 @@ C-g = cancel: " '(?? ?m ?x ?q))))
                          (push atom collection))))
                     collection)))))
            (unless (string-empty-p mode)
-             (if (assq 'default-stapled-mode (binder-read))
-                 (setf (alist-get 'default-stapled-mode (binder-read)) mode)
-               (push (cons 'default-stapled-mode mode) (binder-read)))))
+             (if (assq 'default-concat-mode (binder-read))
+                 (setf (alist-get 'default-concat-mode (binder-read)) mode)
+               (push (cons 'default-concat-mode mode) (binder-read)))))
          (binder-write-maybe))
         ((= char ?x)
          (let ((extension
@@ -1229,7 +1229,7 @@ Unconditionally activates `binder-mode'."
     (define-key map (kbd "}") #'binder-sidebar-enlarge-window)
     (define-key map (kbd "g") #'binder-sidebar-refresh)
     (define-key map (kbd "j") #'binder-sidebar-jump-to-current)
-    (define-key map (kbd "C") #'binder-sidebar-change-directory)
+    (define-key map (kbd "P") #'binder-sidebar-change-directory)
     (define-key map (kbd "n") #'next-line)
     (define-key map (kbd "p") #'previous-line)
     (define-key map (kbd "RET") #'binder-sidebar-find-file)
@@ -1242,7 +1242,8 @@ Unconditionally activates `binder-mode'."
     (define-key map (kbd "T") #'binder-sidebar-remove-tag)
     (define-key map (kbd "#") #'binder-sidebar-add-tag)
     (define-key map (kbd "U") #'binder-sidebar-unmark-all)
-    (define-key map (kbd "v") #'binder-sidebar-staple)
+    (define-key map (kbd "c") #'binder-sidebar-concat)
+    (define-key map (kbd "v") #'binder-sidebar-concat)
     (define-key map (kbd "i") #'binder-sidebar-toggle-notes)
     (define-key map (kbd "z") #'binder-sidebar-open-notes)
     (define-key map (kbd "M-n") #'binder-sidebar-shift-down)
@@ -1444,37 +1445,36 @@ This command writes project data to disk."
 (define-key binder-notes-mode-map (kbd "C-c C-k") #'quit-window)
 
 
-;;; Staple Mode
+;;; Concat Mode
 
-(defgroup binder-staple ()
-  "Options for `binder-staple-mode'.
-This is for \"stapling\" together multiple binder files."
+(defgroup binder-concat ()
+  "Options for `binder-concat-mode'."
   :group 'binder)
 
-(defcustom binder-default-stapled-mode
+(defcustom binder-default-concat-mode
   'text-mode
-  "Default major mode when stapling together files."
+  "Default major mode when concatenating files."
   :type 'function
   :safe 'functionp
-  :group 'binder-staple)
+  :group 'binder-concat)
 
-(defcustom binder-staple-separator "\n"
-  "String to insert between files when stapling together."
+(defcustom binder-concat-separator "\n"
+  "String to insert between concatenated project files."
   :type 'string
-  :group 'binder-staple)
+  :group 'binder-concat)
 
-(defcustom binder-staple-buffer
-  "*Binder Staple View*"
-  "Buffer name for viewing stapled files."
+(defcustom binder-concat-buffer
+  "*Binder Concat View*"
+  "Buffer name for viewing a concatenated project."
   :type 'string
   :safe 'stringp
-  :group 'binder-staple)
+  :group 'binder-concat)
 
-(defun binder-staple ()
+(defun binder-concat ()
   "Concatenate all project files marked as included.
-Creates `binder-staple-buffer' with each file is separated by
-`binder-staple-separator'. Sets destination buffer major mode to
-\"default-stapled-mode\" project property.
+Creates `binder-concat-buffer' with each file separated by
+`binder-concat-separator'. Sets destination buffer major mode to
+\"default-concat-mode\" project property.
 
 See `binder-sidebar-toggle-include'."
   (interactive)
@@ -1482,31 +1482,31 @@ See `binder-sidebar-toggle-include'."
   (let ((item-list
          (seq-filter
           (lambda (item) (alist-get 'include item))
-          (binder-get-structure binder-narrow-tags))))
-    (with-current-buffer (get-buffer-create binder-staple-buffer)
+          (binder-get-structure))))
+    (with-current-buffer (get-buffer-create binder-concat-buffer)
       (with-silent-modifications
         (erase-buffer)
         (dolist (item item-list)
           (let ((x (point)))
             (insert-file-contents (expand-file-name (car item) binder-project-directory))
             (goto-char (point-max))
-            (insert binder-staple-separator)
+            (insert binder-concat-separator)
             (put-text-property x (point) 'binder-original-file
                                (expand-file-name (car item) binder-project-directory)))))
-      (funcall (alist-get 'default-stapled-mode (binder-read)))
-      (binder-staple-mode t))
+      (funcall (alist-get 'default-concat-mode (binder-read)))
+      (binder-concat-mode t))
     (if (eq major-mode 'binder-sidebar-mode)
         (let ((pop-up-windows binder-sidebar-pop-up-windows))
-          (pop-to-buffer binder-staple-buffer))
-      (pop-to-buffer binder-staple-buffer))))
+          (pop-to-buffer binder-concat-buffer))
+      (pop-to-buffer binder-concat-buffer))))
 
-(defalias 'binder-sidebar-staple 'binder-staple)
+(defalias 'binder-sidebar-concat 'binder-concat)
 
-(defun binder-staple-find-original-file ()
+(defun binder-concat-find-original-file ()
   "Find the file containing content at point."
   (interactive)
-  (unless binder-staple-mode
-    (user-error "Not in %S" 'binder-staple-mode))
+  (unless binder-concat-mode
+    (user-error "Not in %S" 'binder-concat-mode))
   (let ((original-file (or (get-text-property (point) 'binder-original-file)
                            (get-text-property (1- (point)) 'binder-original-file))))
         ;; (position
@@ -1523,18 +1523,19 @@ See `binder-sidebar-toggle-include'."
     ;; (setq position (1+ (- (point) position)))
     (find-file-existing original-file)))
 
-(defcustom binder-staple-mode-hook
+(defcustom binder-concat-mode-on-hook
   '(view-mode)
-  "Hook run after entering Binder Staple Mode."
+  "Hook run after entering `binder-concat-mode'."
   :type 'hook
-  :group 'binder-staple)
+  :group 'binder-concat)
 
-(defvar binder-staple-mode-map (make-sparse-keymap))
+(defvar binder-staple-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "M-RET") #'binder-concat-find-original-file)
+    map))
 
-(define-key binder-staple-mode-map (kbd "M-RET") #'binder-staple-find-original-file)
-
-(define-minor-mode binder-staple-mode
-  "Minor mode for viewing files \"stapled\" together."
+(define-minor-mode binder-concat-mode
+  "Minor mode for viewing concatenated project files."
   :init-value nil)
 
 
