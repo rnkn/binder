@@ -693,13 +693,15 @@ one, otherwise insert at end."
       (unless noninteractive
         (add-hook 'kill-emacs-hook 'binder-exit-hook)
         (add-hook 'window-configuration-change-hook 'binder-highlight-in-sidebar))
+    (binder-save 'prompt)
     (remove-hook 'window-configuration-change-hook 'binder-highlight-in-sidebar)
     (when (window-live-p (get-buffer-window binder-sidebar-buffer))
       (with-selected-window (get-buffer-window binder-sidebar-buffer)
         (quit-window t)))
     (when (window-live-p (get-buffer-window binder-notes-buffer))
       (with-selected-window (get-buffer-window binder-notes-buffer)
-        (quit-window t)))))
+        (quit-window t)))
+    (setq binder--cache nil)))
 
 
 ;;; Sidebar Major Mode
