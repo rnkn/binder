@@ -364,7 +364,7 @@ any time with `binder-change-directory'."
 (defun binder-find-project-file ()
   "Find or initialize current project file."
   (let ((binder-file
-         (expand-file-name binder-default-file (binder-root))))
+         (expand-file-name binder-default-file binder-project-directory)))
     (if (file-exists-p binder-file)
         binder-file
       (binder-init-project-file))))
