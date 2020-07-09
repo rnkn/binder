@@ -17,5 +17,7 @@
 - [ ] project search
 - [ ] jump to file in project
 - [ ] look at `text-clone-create` for staple mode
-- [ ] "status" -> "tag"
-- [ ] implement multiple tags
+- [X] "status" -> "tag"
+- [X] implement multiple tags
+- [ ] change notes window to info window
+- [ ] add list option for what's displayed in info window
