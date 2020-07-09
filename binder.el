@@ -1087,21 +1087,6 @@ When ARG is non-nil, do not prompt for confirmation."
   (binder-write-maybe)
   (binder-sidebar-refresh))
 
-(defun binder-sidebar-set-status (status)
-  "Set the status of marked items or item at point to STATUS."
-  (interactive
-   (list (completing-read
-          "Status: " (binder-get-prop-list 'status)
-          nil nil (binder-get-item-prop (or (car binder--sidebar-marked)
-                                            (binder-sidebar-get-fileid))
-                                        'status))))
-  (dolist (fileid (or binder--sidebar-marked
-                      (list (binder-sidebar-get-fileid))))
-    (binder-set-item-prop fileid 'status status))
-  (setq binder--sidebar-marked nil)
-  (binder-write-maybe)
-  (binder-sidebar-refresh))
-
 (defun binder-sidebar-toggle-file-extensions ()
   "Toggle visibility of binder item file extensions."
   (interactive)
