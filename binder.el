@@ -1260,7 +1260,7 @@ Unconditionally activates `binder-mode'."
     (define-key map (kbd "}") #'binder-sidebar-enlarge-window)
     (define-key map (kbd "g") #'binder-sidebar-refresh)
     (define-key map (kbd "j") #'binder-sidebar-jump-to-current)
-    (define-key map (kbd "P") #'binder-sidebar-change-directory)
+    (define-key map (kbd "C") #'binder-sidebar-change-directory)
     (define-key map (kbd "n") #'next-line)
     (define-key map (kbd "p") #'previous-line)
     (define-key map (kbd "RET") #'binder-sidebar-find-file)
