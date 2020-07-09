@@ -346,8 +346,8 @@ any time with `binder-change-directory'."
           (insert binder-file-header
                   (pp-to-string
                    (list (cons 'structure nil)
-                         (cons 'default-concat-mode binder-default-concat-mode)
-                         (cons 'default-extension binder-default-file-extention))))
+                         (cons 'default-extension binder-default-file-extention)
+                         (cons 'default-concat-mode binder-default-concat-mode))))
           (write-file binder-file))
         (binder-set-unmodified)
         binder-file))))
@@ -538,8 +538,9 @@ to only items without those tags."
         (lambda (tag)
           (push tag tags))
         (alist-get 'tags item)))
-     (binder-get-structure (when current binder-narrow-tags)
-                           (when current binder-exclude-tags)))
+     (apply 'binder-get-structure
+            (when current (list binder-narrow-tags
+                                binder-exclude-tags))))
     (seq-uniq tags 'string-equal)))
 
 (defun binder-get-buffer-fileid ()

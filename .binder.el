@@ -39,5 +39,5 @@
   ("tutorial/end.txt"
    (display . "tutorial/The End")
    (tags "tutorial")))
- (default-concat-mode . text-mode)
- (default-extension . "txt"))
+ (default-extension . "txt")
+ (default-concat-mode . text-mode))
