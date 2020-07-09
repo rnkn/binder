@@ -183,9 +183,8 @@
 ;; as included will be concatenated in a new buffer (separated by
 ;; binder-concat-separator string.)
 
-;; In this buffer, calling binder-concat-find-original-file (bound to
-;; M-RET) will visit the original file corresponding to the text at
-;; point.
+;; In this buffer, calling binder-concat-find-original (M-RET) will
+;; visit the original file corresponding to the text at point.
 
 ;; ## Why not just use Org Mode? ##
 
@@ -1533,7 +1532,7 @@ See `binder-sidebar-toggle-include'."
 
 (defalias 'binder-sidebar-concat 'binder-concat)
 
-(defun binder-concat-find-original-file ()
+(defun binder-concat-find-original ()
   "Find the file containing content at point."
   (interactive)
   (unless binder-concat-mode
@@ -1562,7 +1561,7 @@ See `binder-sidebar-toggle-include'."
 
 (defvar binder-concat-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "M-RET") #'binder-concat-find-original-file)
+    (define-key map (kbd "M-RET") #'binder-concat-find-original)
     map))
 
 (define-minor-mode binder-concat-mode
