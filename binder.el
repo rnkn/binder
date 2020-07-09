@@ -662,6 +662,39 @@ one, otherwise insert at end."
   (let ((string (delete-and-extract-region beg end)))
     (binder-add-file fileid nil string)))
 
+(defun binder-set-concat-mode (mode)
+  "Set the project file's `default-concat-mode' value to MODE."
+  (interactive
+   (list (intern-soft
+          (completing-read
+           "Project default concatenated mode: "
+           (let (collection)
+             (mapatoms
+              (lambda (atom)
+                (when (and (string-match "-mode\\'" (symbol-name atom))
+                           (not (string-match "^global-\\|-minor-mode\\'\\|--"
+                                              (symbol-name atom))))
+                  (push atom collection))))
+             collection)
+           nil t))))
+  (unless mode (user-error "Default mode must be a string"))
+  (if (assq 'default-concat-mode (binder-read))
+      (setf (alist-get 'default-concat-mode binder--cache) mode)
+    (push (cons 'default-concat-mode mode) binder--cache))
+  (binder-write)
+  (alist-get 'default-concat-mode binder--cache))
+
+(defun binder-set-file-extention (ext)
+  "Set the project file's `default-file-extension' value to EXT."
+  (interactive
+   (list (read-string "Project default file extension: ")))
+  (setq ext (string-trim ext "[ .]*"))
+  (if (assq 'default-extension binder--cache)
+      (setf (alist-get 'default-extension binder--cache) ext)
+    (push (cons 'default-extension ext) binder--cache))
+  (binder-write)
+  (alist-get 'default-file-extension binder--cache))
+
 (defvar binder-navigation-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c ]") #'binder-next)
@@ -1183,32 +1216,9 @@ C-g = cancel: " '(?? ?m ?x ?q))))
         ((= char ??)
          (describe-mode))
         ((= char ?m)
-         (let ((mode
-                (intern-soft
-                 (completing-read
-                  "Default concat mode: "
-                  (let (collection)
-                    (mapatoms
-                     (lambda (atom)
-                       (when (and (string-match "-mode\\'" (symbol-name atom))
-                                  (not (string-match "^global-\\|-minor-mode\\'\\|--"
-                                                     (symbol-name atom))))
-                         (push atom collection))))
-                    collection)))))
-           (unless (string-empty-p mode)
-             (if (assq 'default-concat-mode (binder-read))
-                 (setf (alist-get 'default-concat-mode (binder-read)) mode)
-               (push (cons 'default-concat-mode mode) (binder-read)))))
-         (binder-write-maybe))
+         (call-interactively #'binder-set-concat-mode))
         ((= char ?x)
-         (let ((extension
-                (read-string "Default file extension: ")))
-           (unless (string-empty-p extension)
-             (setq extension (string-trim extension "[ .]*"))
-             (if (assq 'default-extension binder--cache)
-                 (setf (alist-get 'default-extension binder--cache) extension)
-               (push (cons 'default-extension extension) binder--cache))))
-         (binder-write-maybe))))
+         (call-interactively #'binder-set-file-extention))))
 
 ;;;###autoload
 (defun binder-reveal-in-sidebar ()
@@ -1502,7 +1512,10 @@ See `binder-sidebar-toggle-include'."
   (let ((item-list
          (seq-filter
           (lambda (item) (alist-get 'include item))
-          (binder-get-structure))))
+          (binder-get-structure)))
+        (concat-fun
+         (or (alist-get 'default-concat-mode (binder-read))
+             (binder-set-concat-mode binder-default-concat-mode))))
     (with-current-buffer (get-buffer-create binder-concat-buffer)
       (with-silent-modifications
         (erase-buffer)
