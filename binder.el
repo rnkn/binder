@@ -334,7 +334,7 @@ any time with `binder-change-directory'."
   (setq binder--modification-count 0
         binder--modification-time (current-time)))
 
-(defun binder-init-binder-file ()
+(defun binder-init-project-file ()
   "Initialize an empty binder file."
   (let ((directory (or binder-project-directory default-directory)))
     (when (y-or-n-p (format "Initialize empty %s in %s? "
@@ -358,7 +358,7 @@ any time with `binder-change-directory'."
          (expand-file-name binder-default-file (binder-root))))
     (if (file-exists-p binder-file)
         binder-file
-      (binder-init-binder-file))))
+      (binder-init-project-file))))
 
 (defun binder-write ()
   "Write binder data to file."
@@ -443,7 +443,7 @@ Reads from `binder--cache' if valid, or from binder file if not."
       (when (y-or-n-p (format "Set binder directory to %s?"
                               (abbreviate-file-name default-directory)))
         (binder-cd default-directory)
-        (binder-init-binder-file))))))
+        (binder-init-project-file))))))
 
 (defun binder-file-relative-to-root (filepath)
   "Return FILEPATH relative to binder root directory."
