@@ -158,9 +158,8 @@ When calling `binder-sidebar-concat` (`c` or `v`), project items marked
 as included will be concatenated in a new buffer (separated by
 `binder-concat-separator` string.)
 
-In this buffer, calling `binder-concat-find-original-file` (bound to
-`M-RET`) will visit the original file corresponding to the text at
-point.
+In this buffer, calling `binder-concat-find-original` (`M-RET`) will
+visit the original file corresponding to the text at point.
 
 ## Why not just use Org Mode? ##
 
