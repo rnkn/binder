@@ -1560,7 +1560,7 @@ See `binder-sidebar-toggle-include'."
   :type 'hook
   :group 'binder-concat)
 
-(defvar binder-staple-mode-map
+(defvar binder-concat-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "M-RET") #'binder-concat-find-original-file)
     map))
