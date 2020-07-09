@@ -557,10 +557,6 @@ to only items without those tags."
       binder-narrow-tags))
    (binder-get-structure)))
 
-(defun binder-exit-hook ()
-  "Ensure project data is saved on exit."
-  (when binder-mode (binder-save 'prompt)))
-
 
 ;;; Global Minor Mode
 
@@ -575,6 +571,10 @@ to only items without those tags."
          (binder-write))
         (t
          (binder-write))))
+
+(defun binder-exit-hook ()
+  "Ensure project data is saved on exit."
+  (when binder-mode (binder-save 'prompt)))
 
 (defun binder-change-directory (directory)
   "Change to binder project directory DIRECTORY."
