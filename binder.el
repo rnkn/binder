@@ -380,28 +380,34 @@ any time with `binder-change-directory'."
     (binder-set-modified)))
 
 (defun binder-read ()
-  "Read current binder data.
-Reads from `binder--cache' if valid, or from binder file if not."
+  "Read current project data.
+Reads from `binder--cache' if valid, or from project file if not."
   (let ((binder-file (binder-find-project-file)))
-    (unless binder-file (user-error "No binder file found"))
-    ;; If the binder--cache is invalid, offer to revert from disk, otherwise,
-    ;; write binder data.
-    (when (and binder--cache
-               (time-less-p binder--modification-time
-                            (nth 5 (file-attributes binder-file))))
-      (unless (y-or-n-p "Project file changed on disk; revert from disk? ")
-        (binder-write))
-      (setq binder--cache nil))
-    ;; The cache is only valid if binder--cache is non-nil, and
-    ;; binder-project-directory is the current binder-root.
-    (unless (and binder--cache
-                 (file-equal-p binder-project-directory
-                               (binder-root)))
+    (when binder--cache
+      (cond
+       ;; If there's no project file found, signal an error.
+       ((null binder-file)
+        (user-error "No binder file found"))
+       ;; If the cache doesn't refer to the project directory, set the cache to
+       ;; nil.
+       ((not (file-equal-p binder-project-directory (binder-root)))
+        (setq binder--cache nil))
+       ;; If the project file is newer than the cache, offer to revert from disk
+       ;; (and write binder data), regardless, set the cache to nil.
+       ((time-less-p binder--modification-time
+                     (nth 5 (file-attributes binder-file)))
+        (unless (y-or-n-p "Project file changed on disk; revert from disk? ")
+          (binder-write))
+        (setq binder--cache nil))))
+    ;; If the cache survived all that, it's valid, otherwise, read from the
+    ;; project file.
+    (unless binder--cache
       (with-temp-buffer
         (insert-file-contents binder-file)
         (goto-char (point-min))
         (setq binder--cache (read (current-buffer)))
         (binder-set-unmodified))))
+  ;; Finally, return the cache.
   binder--cache)
 
 (defun binder-cd (directory)
