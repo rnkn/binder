@@ -334,6 +334,15 @@ any time with `binder-change-directory'."
   (setq binder--modification-count 0
         binder--modification-time (current-time)))
 
+(defun binder-cd (directory)
+  "Set `binder-project-directory' to DIRECTORY and erase cache."
+  (customize-set-variable 'binder-project-directory directory)
+  (setq binder-narrow-tags nil
+        binder-exclude-tags nil
+        binder--notes-fileid nil
+        binder--cache nil)
+  (binder-set-unmodified))
+
 (defun binder-init-project-file ()
   "Initialize an empty project file."
   (let ((directory (or binder-project-directory default-directory)))
@@ -349,7 +358,7 @@ any time with `binder-change-directory'."
                          (cons 'default-extension binder-default-file-extention)
                          (cons 'default-concat-mode binder-default-concat-mode))))
           (write-file binder-file))
-        (binder-set-unmodified)
+        (binder-cd directory)
         binder-file))))
 
 (defun binder-find-project-file ()
@@ -406,15 +415,6 @@ Reads from `binder--cache' if valid, or from project file if not."
         (binder-set-unmodified))))
   ;; Finally, return the cache.
   binder--cache)
-
-(defun binder-cd (directory)
-  "Set `binder-project-directory' to DIRECTORY and erase cache."
-  (customize-set-variable 'binder-project-directory directory)
-  (setq binder-narrow-tags nil
-        binder-exclude-tags nil
-        binder--notes-fileid nil
-        binder--cache nil)
-  (binder-set-unmodified))
 
 (defun binder-ensure-in-project ()
   "Ensure the current file or directory is in the project."
