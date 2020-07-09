@@ -321,21 +321,21 @@ any time with `binder-change-directory'."
 ;;; Core Non-interactive Functions
 
 (defun binder-root ()
-  "Return the root directory with a binder file, or nil."
+  "Return the root directory with a project file, or nil."
   (locate-dominating-file default-directory binder-default-file))
 
 (defun binder-set-modified ()
-  "Set the binder data as modified."
+  "Set the project data as modified."
   (cl-incf binder--modification-count)
   (setq binder--modification-time (current-time)))
 
 (defun binder-set-unmodified ()
-  "Set the binder data as unmodified."
+  "Set the project data as unmodified."
   (setq binder--modification-count 0
         binder--modification-time (current-time)))
 
 (defun binder-init-project-file ()
-  "Initialize an empty binder file."
+  "Initialize an empty project file."
   (let ((directory (or binder-project-directory default-directory)))
     (when (y-or-n-p (format "Initialize empty %s in %s? "
                             binder-default-file
@@ -361,11 +361,7 @@ any time with `binder-change-directory'."
       (binder-init-project-file))))
 
 (defun binder-write ()
-  "Write binder data to file."
-  ;; (mapc (lambda (item)
-  ;;         (setf item (rassq-delete-all nil item)
-  ;;               item (rassq-delete-all "" item)))
-  ;;       (binder-get-structure))
+  "Write project data to file."
   (let ((binder-file (binder-find-project-file)))
     (with-temp-buffer
       (insert binder-file-header
@@ -374,7 +370,8 @@ any time with `binder-change-directory'."
   (binder-set-unmodified))
 
 (defun binder-write-maybe ()
-  "Write binder data if passed modified threshold."
+  "Call `binder-write' if modified threshold has been reached.
+Otherwise call `binder-set-modified'."
   (if (<= binder-save-threshold binder--modification-count)
       (binder-write)
     (binder-set-modified)))
@@ -423,24 +420,23 @@ Reads from `binder--cache' if valid, or from project file if not."
   "Ensure the current file or directory is in the project."
   (let ((root (binder-root)))
     (cond
-     ;; The binder-project-directory matches root, we're all good.
+     ;; The project directory matches root, we're all good.
      ((and (stringp binder-project-directory)
            (stringp root)
            (file-equal-p binder-project-directory root))
       t)
-     ;; The binder-project-directory does not match project root; offer to
-     ;; change it to current project root.
+     ;; The project directory does not match project root; offer to change it to
+     ;; current project root.
      ((and (stringp binder-project-directory)
            (stringp root))
       (when (y-or-n-p (format "Outside of current project %s\nSwitch project directory to %s?"
                               binder-project-directory root))
         (binder-cd root)))
-     ;; The binder-project-directory is set but we're not in a project; this is
-     ;; fine.
+     ;; The project directory is set but we're not in a project; this is fine.
      ((stringp binder-project-directory)
       t)
-     ;; The binder-project-directory is not set, but we're in a project; offer
-     ;; to set it to current project root.
+     ;; The project directory is not set, but we're in a project; offer to set
+     ;; it to current project root.
      ((stringp root)
       (binder-cd root)
       (message "Set binder directory to %s" root))
