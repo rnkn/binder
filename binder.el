@@ -407,8 +407,8 @@ Reads from `binder--cache' if valid, or from binder file if not."
 (defun binder-cd (directory)
   "Set `binder-project-directory' to DIRECTORY and erase cache."
   (customize-set-variable 'binder-project-directory directory)
-  (setq binder-status-filter-in nil
-        binder-status-filter-out nil
+  (setq binder-narrow-tags nil
+        binder-exclude-tags nil
         binder--notes-fileid nil
         binder--cache nil)
   (binder-set-unmodified))
