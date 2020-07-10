@@ -354,9 +354,7 @@ any time with `binder-change-directory'."
         (with-temp-buffer
           (insert binder-file-header
                   (pp-to-string
-                   (list (cons 'structure nil)
-                         (cons 'default-extension binder-default-file-extention)
-                         (cons 'default-concat-mode binder-default-concat-mode))))
+                   (list (cons 'structure nil))))
           (write-file binder-file))
         (binder-cd directory)
         binder-file))))
@@ -630,7 +628,8 @@ one, otherwise insert at end."
               (and (string-match "\\.[^.]+\\'" fileid)
                    (not (= 0 (match-beginning 0)))))
     (setq fileid
-          (concat fileid "." (alist-get 'default-extension (binder-read)))))
+          (concat fileid "." (or (alist-get 'default-extension (binder-read))
+                                 binder-default-file-extention))))
   ;; If the file/directory does not exist, create it.
   (let ((filepath (expand-file-name fileid binder-project-directory)))
     (unless (file-exists-p filepath)
@@ -1503,8 +1502,8 @@ This command writes project data to disk."
 (defun binder-concat ()
   "Concatenate all project files marked as included.
 Creates `binder-concat-buffer' with each file separated by
-`binder-concat-separator'. Sets destination buffer major mode to
-\"default-concat-mode\" project property.
+`binder-concat-separator' and sets the major mode to either the
+project `default-concat-mode' or `binder-default-concat-mode'.
 
 See `binder-sidebar-toggle-include'."
   (interactive)
@@ -1515,18 +1514,19 @@ See `binder-sidebar-toggle-include'."
           (binder-get-structure)))
         (concat-fun
          (or (alist-get 'default-concat-mode (binder-read))
-             (binder-set-concat-mode binder-default-concat-mode))))
+             binder-default-concat-mode)))
     (with-current-buffer (get-buffer-create binder-concat-buffer)
       (with-silent-modifications
         (erase-buffer)
         (dolist (item item-list)
           (let ((x (point)))
-            (insert-file-contents (expand-file-name (car item) binder-project-directory))
+            (insert-file-contents
+             (expand-file-name (car item) binder-project-directory))
             (goto-char (point-max))
             (insert binder-concat-separator)
             (put-text-property x (point) 'binder-original-file
                                (expand-file-name (car item) binder-project-directory)))))
-      (funcall (alist-get 'default-concat-mode (binder-read)))
+      (funcall concat-fun)
       (binder-concat-mode t))
     (if (eq major-mode 'binder-sidebar-mode)
         (let ((pop-up-windows binder-sidebar-pop-up-windows))
