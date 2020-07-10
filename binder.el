@@ -765,6 +765,13 @@ See `display-buffer-in-side-window' for example options."
   :safe 'booleanp
   :group 'binder-sidebar)
 
+(defcustom binder-sidebar-hide-tags
+  nil
+  "When non-nil, list items without tags."
+  :type 'boolean
+  :safe 'booleanp
+  :group 'binder-sidebar)
+
 (defcustom binder-sidebar-pop-up-windows
   nil
   "Non-nil means displaying a new buffer should make a new window."
@@ -900,7 +907,7 @@ filter by tags."
             (put-text-property (line-beginning-position) (line-end-position)
                                'face 'binder-sidebar-marked))
           ;; Add the item TAGS with a hashtag, because hashtags are cool, right?
-          (when tags
+          (when (and (not binder-sidebar-hide-tags) tags)
             (move-to-column (1- binder-sidebar-tags-column))
             (unless (eolp) (setq tags-overwrite t))
             (move-to-column binder-sidebar-tags-column)
@@ -1119,7 +1126,7 @@ When ARG is non-nil, do not prompt for confirmation."
   (binder-sidebar-refresh))
 
 (defun binder-sidebar-toggle-file-extensions ()
-  "Toggle visibility of binder item file extensions."
+  "Toggle visibility of item file extensions."
   (interactive)
   (customize-set-variable 'binder-sidebar-hide-file-extensions
                           (not binder-sidebar-hide-file-extensions))
@@ -1129,6 +1136,19 @@ When ARG is non-nil, do not prompt for confirmation."
   (message "%s file extensions"
            (capitalize
             (if binder-sidebar-hide-file-extensions
+                "hiding" "showing"))))
+
+(defun binder-sidebar-toggle-tags ()
+  "Toggle visibility of tags."
+  (interactive)
+  (customize-set-variable 'binder-sidebar-hide-tags
+                          (not binder-sidebar-hide-tags))
+  (let ((fileid (binder-sidebar-get-fileid)))
+    (binder-sidebar-refresh)
+    (binder-sidebar-goto-item fileid))
+  (message "%s tags"
+           (capitalize
+            (if binder-sidebar-hide-tags
                 "hiding" "showing"))))
 
 ;; FIXME: fails with filtered structure
@@ -1269,7 +1289,7 @@ Unconditionally activates `binder-mode'."
     (define-key map (kbd "u") #'binder-sidebar-unmark)
     (define-key map (kbd "t") #'binder-sidebar-add-tag)
     (define-key map (kbd "T") #'binder-sidebar-remove-tag)
-    (define-key map (kbd "#") #'binder-sidebar-add-tag)
+    (define-key map (kbd "#") #'binder-sidebar-toggle-tags)
     (define-key map (kbd "U") #'binder-sidebar-unmark-all)
     (define-key map (kbd "c") #'binder-sidebar-concat)
     (define-key map (kbd "v") #'binder-sidebar-concat)
