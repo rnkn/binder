@@ -447,8 +447,8 @@ Reads from `binder--cache' if valid, or from project file if not."
 
 (defun binder-file-relative-to-root (filepath)
   "Return FILEPATH relative to binder root directory."
-  (string-trim (expand-file-name filepath)
-               (expand-file-name (or binder-project-directory ""))))
+  (string-remove-prefix (expand-file-name (or binder-project-directory ""))
+                        (expand-file-name filepath)))
 
 (defun binder-get-structure (&optional narrow-tags exclude-tags)
   "Return binder data structure component.
@@ -687,7 +687,7 @@ one, otherwise insert at end."
   "Set the project file's `default-file-extension' value to EXT."
   (interactive
    (list (read-string "Project default file extension: ")))
-  (setq ext (string-trim ext "[ .]*"))
+  (setq ext (string-remove-prefix "." ext))
   (if (assq 'default-extension binder--cache)
       (setf (alist-get 'default-extension binder--cache) ext)
     (push (cons 'default-extension ext) binder--cache))
