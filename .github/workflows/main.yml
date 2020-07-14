@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - "binder.el"
+  pull_request:
+    paths:
+      - "binder.el"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        emacs_version:
+          - 25.1
+          - 25.2
+          - 25.3
+          - 26.1
+          - 26.2
+          - 26.3
+          - snapshot
+        emacs_check:
+          - package-lint
+          - byte-compile
+    steps:
+      - uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs_version }}
+      - uses: actions/checkout@master
+      - name: Run checks
+        uses: leotaku/elisp-check@master
+        with:
+          file: "binder.el"
+          ignore_warnings: true
+          check: ${{ matrix.emacs_check }}
