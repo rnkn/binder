@@ -5,7 +5,7 @@
 ;; Author: William Rankin <william@bydasein.com>
 ;; Keywords: files, outlines, wp, text
 ;; Version: 0.2.0
-;; Package-Requires: ((emacs "25.3"))
+;; Package-Requires: ((emacs "25.1"))
 ;; URL: https://github.com/rnkn/binder
 
 ;; This file is not part of GNU Emacs.
