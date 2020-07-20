@@ -539,8 +539,10 @@ to only items without those tags."
 
 (defun binder-get-buffer-fileid ()
   "Return buffer binder fileid."
-  (binder-file-relative-to-root
-   (or (buffer-file-name) (expand-file-name default-directory))))
+   (if (eq major-mode 'binder-sidebar-mode)
+       binder--current-fileid
+     (binder-file-relative-to-root
+      (or (buffer-file-name) default-directory))))
 
 (defun binder-filter-structure ()
   "Return binder structure filtered by `binder-narrow-tags'."
