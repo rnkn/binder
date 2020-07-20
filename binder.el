@@ -778,7 +778,12 @@ See `display-buffer-in-side-window' for example options."
   "Non-nil means displaying a new buffer should make a new window."
   :type 'boolean
   :safe 'booleanp
-  :group 'binder-sidebar)
+  :group 'binder-sidebar
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (when (get-buffer binder-sidebar-buffer)
+           (with-current-buffer binder-sidebar-buffer
+             (setq-local pop-up-windows value)))))
 
 (defcustom binder-sidebar-tags-column
   25
