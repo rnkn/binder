@@ -1584,7 +1584,7 @@ See `binder-sidebar-toggle-include'."
 
 (defvar binder-concat-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "M-RET") #'binder-concat-find-original)
+    (define-key map (kbd "C-c RET") #'binder-concat-find-original)
     map))
 
 (define-minor-mode binder-concat-mode
