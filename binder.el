@@ -653,8 +653,7 @@ one, otherwise insert at end."
     ;; When binder sidebar is active, refresh it.
     (binder-sidebar-refresh-window)
     ;; Finally, visit the file FILEPATH.
-    (let ((pop-up-windows binder-sidebar-pop-up-windows))
-      (find-file filepath))))
+    (find-file filepath)))
 
 (defun binder-extract-region-to-new-file (beg end fileid)
   "Extract region between BEG and END into new project file FILEID."
@@ -978,8 +977,7 @@ Defaults to current directory."
   "Visit binder item at point.
 When ARG is non-nil, visit in new window."
   (interactive "P")
-  (let ((pop-up-windows (or arg binder-sidebar-pop-up-windows))
-        (fileid (binder-sidebar-get-fileid))
+  (let ((fileid (binder-sidebar-get-fileid))
         filepath)
     (setq filepath (expand-file-name fileid))
     (when (file-exists-p filepath)
@@ -1318,6 +1316,7 @@ Unconditionally activates `binder-mode'."
 (define-derived-mode binder-sidebar-mode
   special-mode "Binder Sidebar"
   "Major mode for working with `binder' projects."
+  (setq-local pop-up-windows binder-sidebar-pop-up-windows)
   (add-hook 'post-command-hook 'binder-sidebar-sync-notes t t))
 
 
@@ -1550,10 +1549,7 @@ See `binder-sidebar-toggle-include'."
                                (expand-file-name (car item) binder-project-directory)))))
       (funcall concat-fun)
       (binder-concat-mode t))
-    (if (eq major-mode 'binder-sidebar-mode)
-        (let ((pop-up-windows binder-sidebar-pop-up-windows))
-          (pop-to-buffer binder-concat-buffer))
-      (pop-to-buffer binder-concat-buffer))))
+    (pop-to-buffer binder-concat-buffer)))
 
 (defalias 'binder-sidebar-concat 'binder-concat)
 
