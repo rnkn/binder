@@ -1,9 +1,11 @@
-First enable binder-mode with M-x binder-mode.
+First enable binder-mode with M-x binder-mode. Binder is a global mode,
+meaning it is enabled in all Emacs buffers.
 
-Now type C-c ; to reveal this file in the sidebar. See that although the
-filename is start-here.txt it is displayed as "foo". You can change the display
-name of a binder item with r.
+You may want to set a global key binding to binder-mode in your init.el:
 
-Type q in the sidebar to quit the window.
+    (define-key (current-global-map) (kbd "C-c b") 'binder-mode)
+
+Now type C-c ; to reveal this file in the sidebar. Your main interaction
+with a binder project happens in the sidebar.
 
 Type C-c ] to go to the next file.
