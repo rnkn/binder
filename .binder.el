@@ -6,7 +6,6 @@
   ("binder.el"
    (tags "code"))
   ("README.md")
-  ("TODO.md")
   ("tutorial/start-here.txt"
    (notes . "This file is going by a pseudonym")
    (tags "start-here" "tutorial"))
