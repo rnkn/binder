@@ -1,5 +1,0 @@
-==> Move the cursor here and type M-RET. <==
-
-This is how you go from viewing some stapled writing back to the original file
-for editing. The staple view is good for proofreading and creating a final
-export, but not editing.
