@@ -1,5 +1,12 @@
-Now try typing C-c [ to go back to the previous file.
+You can navigate through project items backward and forward with C-c [
+and C-c ], which means Emacs will visit each file in the project list in
+succession.
 
-Now try C-c [ [ ] ] ] (or some combination thereof). You don't need to prefix
-C-c each time. Come back here when you're done. The highlight in the sidebar
-lets you know where you are so you don't get lost.
+Try typing C-c [ to go back to a previous file. You don't need to prefix
+C-c each time, so you can type e.g. C-c [ [ ] ] ] to repeatedly navigate
+backward/forward.
+
+Come back here when you're done. The highlight in the sidebar lets you
+know where you are so you don't get lost.
+
+Type C-c ] to go to the next file.

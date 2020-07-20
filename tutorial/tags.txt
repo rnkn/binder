@@ -1,0 +1,22 @@
+Each project item can have any number of arbitrary tags, which are
+prefixed with # by default. You can change this character with the
+option binder-sidebar-tags-char.
+
+To add a tag to an item, type t and enter the tag. To remove a tag, type
+T and enter the tag. These commands work either with the item at point,
+or all marked items.
+
+Type / then "tutorial" (or "tut TAB" to autocomplete) to narrow sidebar
+items to only items tagged "tutorial". Now do the same again but type
+"foo" to further narrow sidebar items to only items tagged "tutorial"
+and "foo".
+
+Now type \ then "bar" to exclude sidebar items tagged "bar". You should
+have a sidebar with only the tutorial/tags item showing.
+
+Filtering the sidebar using tags allows a lot of flexibility with which
+project files you want to work with in the sidebar. When the sidebar
+items are filtered, navigating backward/forward only considers those
+items.
+
+Type g to clear tag filters and refresh the sidebar.

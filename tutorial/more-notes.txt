@@ -1,4 +1,0 @@
-A file's notes can be edited without opening the sidebar. First, quit the
-sidebar with q or C-c ' then type C-c ".
-
-You can also add a new file after any file in the binder with C-c :.

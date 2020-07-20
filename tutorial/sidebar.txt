@@ -1,11 +1,29 @@
-Type C-c ' to toggle the sidebar. Unlike C-c ; this does not select the sidebar,
-but you can change this by setting binder-sidebar-select-window.
+Type C-c ' to toggle the sidebar on/off. Unlike C-c ; this does not
+select the sidebar, but you can change this with the option
+binder-sidebar-select-window.
 
-Type C-x 2 to split this window, and C-x 1 to delete-other-windows. Notice the
-sidebar is still there? It's persistent that way. It needs to be quit explicitly
-by selecting and typing q or C-c ' to toggle.
-
-You can make the sidebar not persistent by setting
+Type C-x 2 to split this window, and C-x 1 to delete-other-windows.
+Notice the sidebar is still there? It's persistent that way. It needs to
+be quit explicitly by selecting and typing q or C-c ' to toggle. You can
+make the sidebar not persistent with the option
 binder-sidebar-persistent-window.
+
+By default, and item in the sidebar will show:
+
+    x * project item name    #tag1 #tag2
+
+These things mean:
+
+    x       the item is included when concatenating the project
+    *       the item has project notes
+    #str    arbitrary item tag
+
+You can move about in the sidebar by typing n and p, < and >. You can
+quickly resize the sidebar with { and }. The step with which the sidebar
+is resized can be changed with option binder-sidebar-resize-window-step.
+
+Items in a project are arranged in a linear list. You can rearrange
+items with M-n and M-p. If you push this item backward, then the "next"
+item after this will be the file navigating.txt.
 
 Type C-c ] to go to the next file.

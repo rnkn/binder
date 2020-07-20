@@ -1,0 +1,4 @@
+You can mark multiple project items in the sidebar by typing m. Unmark
+an item with u or unmark all items with U.
+
+Marking items allows you to perform actions on multiple items at once.

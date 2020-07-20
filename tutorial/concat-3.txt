@@ -1,0 +1,5 @@
+==> Move the cursor here and type C-c RET. <==
+
+This is how you go from viewing a concatenated project as a whole back
+to the original file for editing. The concat view is good for
+proofreading and creating a final export, but not editing.

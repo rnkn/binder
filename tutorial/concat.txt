@@ -1,0 +1,8 @@
+Notice that the tutorial items for navigating, sidebar and marking are
+marked with an x? These items are included when you concatenate the
+project.
+
+In the sidebar, type c (or v). Congratulations, you've just concatenated
+some writing!
+
+Type q to quit the staple view and C-c ] to go to the next file.

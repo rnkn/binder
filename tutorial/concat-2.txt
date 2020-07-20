@@ -1,0 +1,13 @@
+By default, concatenating a project enables view-mode, because you're
+not actually looking at the original files.
+
+In the sidebar, you can toggle which items are included when
+concatenating a project by typing x. Clear all inclusions with X.
+
+Now, include the following items:
+
+    concat
+    concat-including
+    concat-editing
+
+Now type c again.
