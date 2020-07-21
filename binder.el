@@ -538,10 +538,13 @@ With optional argument FILTER, call `binder-filter' on data."
 
 (defun binder-get-buffer-fileid ()
   "Return buffer binder fileid."
-   (if (eq major-mode 'binder-sidebar-mode)
-       binder--current-fileid
-     (binder-file-relative-to-root
-      (or (buffer-file-name) default-directory))))
+   (cond ((eq major-mode 'binder-sidebar-mode)
+          binder--current-fileid)
+         ((eq major-mode 'binder-notes-mode)
+          binder--notes-fileid)
+         (t
+          (binder-file-relative-to-root
+           (or (buffer-file-name) default-directory)))))
 
 
 ;;; Global Minor Mode
@@ -645,7 +648,8 @@ one, otherwise insert at end."
     ;; When binder sidebar is active, refresh it.
     (binder-sidebar-refresh-window)
     ;; Finally, visit the file FILEPATH.
-    (find-file filepath)))
+    (let ((pop-up-windows binder-sidebar-pop-up-windows))
+      (find-file filepath))))
 
 (defun binder-extract-region-to-new-file (beg end fileid)
   "Extract region between BEG and END into new project file FILEID."
@@ -737,12 +741,7 @@ See `display-buffer-in-side-window' for example options."
   "Non-nil means displaying a new buffer should make a new window."
   :type 'boolean
   :safe 'booleanp
-  :group 'binder-sidebar
-  :set (lambda (symbol value)
-         (set-default symbol value)
-         (when (get-buffer binder-sidebar-buffer)
-           (with-current-buffer binder-sidebar-buffer
-             (setq-local pop-up-windows value)))))
+  :group 'binder-sidebar)
 
 (defcustom binder-sidebar-tags-column
   25
@@ -1276,7 +1275,6 @@ Unconditionally activates `binder-mode'."
 (define-derived-mode binder-sidebar-mode
   special-mode "Binder Sidebar"
   "Major mode for working with `binder' projects."
-  (setq-local pop-up-windows binder-sidebar-pop-up-windows)
   (add-hook 'post-command-hook 'binder-sidebar-sync-notes t t))
 
 
@@ -1368,12 +1366,12 @@ automatically saved."
              (when binder-sidebar-persistent-window
                (list '(window-parameters (no-delete-other-windows . t))))))))
 
-(defun binder-show-notes (&optional select)
-  "Show the notes for the appropriate project item.
+(defun binder-show-notes (&optional fileid select)
+  "Show the notes for FILEID of the appropriate project item.
 If argument SELECT is non-nil, select the notes window."
   (binder-ensure-in-project)
-  (if (eq major-mode 'binder-sidebar-mode)
-      (setq binder--notes-fileid (binder-sidebar-get-fileid))
+  (if fileid
+      (setq binder--notes-fileid fileid)
     (let ((filepath (or (buffer-file-name) default-directory)))
       (unless (file-equal-p filepath (binder-root))
         (setq binder--notes-fileid (binder-file-relative-to-root filepath)))))
@@ -1385,7 +1383,7 @@ If argument SELECT is non-nil, select the notes window."
 (defun binder-sidebar-open-notes ()
   "Open notes for item at point and select the notes window."
   (interactive)
-  (binder-show-notes t))
+  (binder-show-notes (binder-sidebar-get-fileid) t))
 
 (defun binder-toggle-notes ()
   "Toggle visibility of binder notes window."
@@ -1394,7 +1392,12 @@ If argument SELECT is non-nil, select the notes window."
       (delete-window (get-buffer-window binder-notes-buffer))
     (binder-show-notes)))
 
-(defalias 'binder-sidebar-toggle-notes 'binder-toggle-notes)
+(defun binder-sidebar-toggle-notes ()
+  "Toggle visibility of binder notes window for item at point."
+  (interactive)
+  (if (window-live-p (get-buffer-window binder-notes-buffer))
+      (delete-window (get-buffer-window binder-notes-buffer))
+    (binder-show-notes (binder-sidebar-get-fileid))))
 
 (defun binder-notes-save ()
   "Save notes buffer content to project.
@@ -1432,7 +1435,7 @@ This command writes project data to disk."
         (quit-window)
         (pop-to-buffer (get-buffer-create binder-notes-buffer)))
     (quit-window)
-    (binder-sidebar-open-notes)))
+    (binder-show-notes binder--notes-fileid t)))
 
 (defun binder-sidebar-sync-notes ()
   "Set the current notes to sidebar item at point."
@@ -1507,7 +1510,10 @@ See `binder-sidebar-toggle-include'."
                                (expand-file-name (car item) binder-project-directory)))))
       (funcall concat-mode)
       (binder-concat-mode t))
-    (pop-to-buffer binder-concat-buffer)))
+    (if (eq major-mode 'binder-sidebar-mode)
+        (let ((pop-up-windows binder-sidebar-pop-up-windows))
+          (pop-to-buffer binder-concat-buffer))
+      (pop-to-buffer binder-concat-buffer))))
 
 (defalias 'binder-sidebar-concat 'binder-concat)
 
