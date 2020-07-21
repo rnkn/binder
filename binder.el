@@ -5,7 +5,7 @@
 ;; Author: William Rankin <william@bydasein.com>
 ;; Keywords: files, outlines, wp, text
 ;; Version: 0.3.0
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "24.4") (seq "2.20"))
 ;; URL: https://github.com/rnkn/binder
 
 ;; This file is not part of GNU Emacs.
@@ -204,7 +204,7 @@
 
 ;; ## Requirements ##
 
-;; - Emacs 25.3
+;; - Emacs 24.4
 
 ;; ## Bugs and Feature Requests ##
 
@@ -382,18 +382,18 @@ Included `binder-narrow-tags' and excluded `binder-exclude-tags'."
    (lambda (item)
      (and (seq-every-p
            (lambda (tag)
-             (member tag (alist-get 'tags item)))
+             (member tag (cdr (assq 'tags item))))
            binder-narrow-tags)
           (seq-every-p
            (lambda (tag)
-             (not (member tag (alist-get 'tags item))))
+             (not (member tag (cdr (assq 'tags item)))))
            binder-exclude-tags)))
    data))
 
 (defun binder-upgrade (data version)
   "Upgrade project DATA in VERSION to `binder-format-version'."
   (cond ((not (stringp version))
-         (alist-get 'structure data))
+         (cdr (assq 'structure data)))
         ((= (string-to-number version) binder-format-version)
          data)))
 
@@ -475,7 +475,7 @@ With optional argument FILTER, call `binder-filter' on data."
 
 (defun binder-get-item-prop (fileid prop)
   "Return value of PROP for project item for FILEID."
-  (alist-get prop (cdr (binder-get-item fileid))))
+  (cdr (assq prop (cdr (binder-get-item fileid)))))
 
 (defun binder-set-item-prop (fileid prop value)
   "Set VALUE of PROP for binder item for FILEID."
@@ -520,7 +520,7 @@ With optional argument FILTER, call `binder-filter' on data."
   (delq nil
         (mapcar
          (lambda (item)
-           (let ((value (alist-get prop item)))
+           (let ((value (cdr (assq prop item))))
              (when (and (stringp value) (< 0 (string-width value)))
                value)))
          (binder-read))))
@@ -532,7 +532,7 @@ With optional argument FILTER, call `binder-filter' on data."
        (mapc
         (lambda (tag)
           (push tag tags))
-        (alist-get 'tags item)))
+        (cdr (assq 'tags item)))
      (binder-read filter))
     (seq-uniq tags 'string-equal)))
 
@@ -619,7 +619,7 @@ one, otherwise insert at end."
     (user-error "No file name supplied"))
   ;; If FILEID is not a directory and no file extension was provided,
   ;; add the binder's default file extensions.
-  (unless (or (directory-name-p fileid)
+  (unless (or (file-directory-p fileid)
               (and (string-match "\\.[^.]+\\'" fileid)
                    (not (= 0 (match-beginning 0)))))
     (setq fileid
@@ -627,7 +627,7 @@ one, otherwise insert at end."
   ;; If the file/directory does not exist, create it.
   (let ((filepath (expand-file-name fileid binder-project-directory)))
     (unless (file-exists-p filepath)
-      (if (directory-name-p filepath)
+      (if (file-directory-p filepath)
           (make-directory filepath t)
         (with-current-buffer (find-file-noselect filepath)
           (when (stringp string) (insert string))
@@ -828,10 +828,10 @@ filter by tags."
       (mapc
        (lambda (item)
          (let ((fileid   (car item))
-               (include  (alist-get 'include item))
-               (display  (alist-get 'display item))
-               (notes    (alist-get 'notes item))
-               (tags     (alist-get 'tags item))
+               (include  (cdr (assq 'include item)))
+               (display  (cdr (assq 'display item)))
+               (notes    (cdr (assq 'notes item)))
+               (tags     (cdr (assq 'tags item)))
                marked missing tags-overwrite)
            ;; Set whether FILEID is MARKED and MISSING.
            (when (member fileid binder--sidebar-marked)
@@ -1491,7 +1491,7 @@ See `binder-sidebar-toggle-include'."
   (binder-ensure-in-project)
   (let ((item-list
          (seq-filter
-          (lambda (item) (alist-get 'include item))
+          (lambda (item) (cdr (assq 'include item)))
           (binder-read t)))
         (concat-mode binder-default-concat-mode))
     (with-current-buffer (get-buffer-create binder-concat-buffer)
