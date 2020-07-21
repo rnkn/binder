@@ -179,7 +179,7 @@ narrowing.
 
 ## Requirements ##
 
-- Emacs 25.3
+- Emacs 24.4
 
 ## Bugs and Feature Requests ##
 
