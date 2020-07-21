@@ -532,7 +532,7 @@ With optional argument FILTER, call `binder-filter' on data."
        (mapc
         (lambda (tag)
           (push tag tags))
-        (cdr (assq 'tags item)))
+        (cdr (assq 'tags item))))
      (binder-read filter))
     (seq-uniq tags 'string-equal)))
 
