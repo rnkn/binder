@@ -13,3 +13,5 @@ type C-c C-l. This pops the window out to be a regular window (instead
 of a side-window). This command works as a toggle.
 
 A file's notes can be edited without opening the sidebar with C-c ".
+
+Type C-c ] to go to the next file.

@@ -10,20 +10,25 @@ binder-sidebar-persistent-window.
 
 By default, and item in the sidebar will show:
 
-    x * project item name    #tag1 #tag2
+    x * name        #tag1 #tag2
 
 These things mean:
 
     x       the item is included when concatenating the project
     *       the item has project notes
-    #str    arbitrary item tag
+    name    either the item file name, or a custom item display name
+    #tag    arbitrary item tag
 
-You can move about in the sidebar by typing n and p, < and >. You can
-quickly resize the sidebar with { and }. The step with which the sidebar
-is resized can be changed with option binder-sidebar-resize-window-step.
+You can move about in the sidebar by typing n and p, < and > and visit a
+file by simply typing RET. You can quickly resize the sidebar with { and
+}. The step with which the sidebar is resized can be changed with option
+binder-sidebar-resize-window-step.
 
 Items in a project are arranged in a linear list. You can rearrange
-items with M-n and M-p. If you push this item backward, then the "next"
+items with M-n and M-p. If you shift this item backward, then the "next"
 item after this will be the file navigating.txt.
+
+Try changing this item's display name with r and typing "foo". You can
+revert this by doing the same and entering nothing.
 
 Type C-c ] to go to the next file.
