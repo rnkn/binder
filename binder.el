@@ -941,7 +941,8 @@ Defaults to current directory."
   "Visit binder item at point.
 When ARG is non-nil, visit in new window."
   (interactive "P")
-  (let ((fileid (binder-sidebar-get-fileid))
+  (let ((pop-up-windows (or arg binder-sidebar-pop-up-windows))
+        (fileid (binder-sidebar-get-fileid))
         filepath)
     (setq filepath (expand-file-name fileid))
     (when (file-exists-p filepath)
