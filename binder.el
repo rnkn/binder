@@ -374,9 +374,25 @@ Otherwise call `binder-set-modified'."
       (binder-write)
     (binder-set-modified)))
 
-(defun binder-read ()
+(defun binder-filter (data)
+  "Filter project DATA by tags.
+Included `binder-narrow-tags' and excluded `binder-exclude-tags'."
+  (seq-filter
+   (lambda (item)
+     (and (seq-every-p
+           (lambda (tag)
+             (member tag (alist-get 'tags item)))
+           binder-narrow-tags)
+          (seq-every-p
+           (lambda (tag)
+             (not (member tag (alist-get 'tags item))))
+           binder-exclude-tags)))
+   data))
+
+(defun binder-read (&optional filter)
   "Read current project data.
-Reads from `binder--cache' if valid, or from project file if not."
+Reads from `binder--cache' if valid, or from project file if not.
+With optional argument FILTER, call `binder-filter' on data."
   (let ((binder-file (binder-find-project-file)))
     (when binder--cache
       (cond
@@ -408,7 +424,7 @@ Reads from `binder--cache' if valid, or from project file if not."
             (setq binder--cache (alist-get 'structure binder--cache)))))
       (binder-set-unmodified)))
   ;; Finally, return the cache.
-  binder--cache)
+  (if filter (binder-filter binder--cache) binder--cache))
 
 (defun binder-ensure-in-project ()
   "Ensure the current file or directory is in the project."
