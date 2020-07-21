@@ -234,13 +234,14 @@
 
 ;;; Core Variables
 
+(defvar binder-format-version 2)
 (defvar binder-file-header
-  "\
+  (format "\
 ;; -*- coding: utf-8; -*-
-;; Binder-Format-Version: 2
+;; Binder-Format-Version: %s
 ;; This is a Binder project file. It is meant to be human-readable, but you
-;; probably shouldn't edit it.\n\n"
-  "Header information for binder-file.")
+;; probably shouldn't edit it.\n\n" binder-format-version)
+  "Header information for project file.")
 
 (defvar binder--cache nil)
 (defvar binder--modification-time nil)
@@ -389,11 +390,19 @@ Included `binder-narrow-tags' and excluded `binder-exclude-tags'."
            binder-exclude-tags)))
    data))
 
+(defun binder-upgrade (data version)
+  "Upgrade project DATA in VERSION to `binder-format-version'."
+  (cond ((not (stringp version))
+         (alist-get 'structure data))
+        ((= (string-to-number version) binder-format-version)
+         data)))
+
 (defun binder-read (&optional filter)
   "Read current project data.
 Reads from `binder--cache' if valid, or from project file if not.
 With optional argument FILTER, call `binder-filter' on data."
-  (let ((binder-file (binder-find-project-file)))
+  (let ((binder-file (binder-find-project-file))
+        version)
     (when binder--cache
       (cond
        ;; If there's no project file found, signal an error.
@@ -416,12 +425,10 @@ With optional argument FILTER, call `binder-filter' on data."
       (with-temp-buffer
         (insert-file-contents binder-file)
         ;; Read Binder-Format-Version header
-        (let ((version (lm-header "Binder-Format-Version")))
-          (goto-char (point-min))
-          (setq binder--cache (read (current-buffer)))
-          (unless (and (stringp version)
-                       (<= (string-to-number version) 2))
-            (setq binder--cache (alist-get 'structure binder--cache)))))
+        (setq version (lm-header "binder-format-version"))
+        (goto-char (point-min))
+        (setq binder--cache
+              (binder-upgrade (read (current-buffer)) version)))
       (binder-set-unmodified)))
   ;; Finally, return the cache.
   (if filter (binder-filter binder--cache) binder--cache))
