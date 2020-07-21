@@ -623,8 +623,7 @@ one, otherwise insert at end."
               (and (string-match "\\.[^.]+\\'" fileid)
                    (not (= 0 (match-beginning 0)))))
     (setq fileid
-          (concat fileid "." (or (alist-get 'default-extension (binder-read))
-                                 binder-default-file-extention))))
+          (concat fileid "." binder-default-file-extention)))
   ;; If the file/directory does not exist, create it.
   (let ((filepath (expand-file-name fileid binder-project-directory)))
     (unless (file-exists-p filepath)
@@ -654,39 +653,6 @@ one, otherwise insert at end."
   (binder-ensure-in-project)
   (let ((string (delete-and-extract-region beg end)))
     (binder-add-file fileid nil string)))
-
-(defun binder-set-concat-mode (mode)
-  "Set the project file's `default-concat-mode' value to MODE."
-  (interactive
-   (list (intern-soft
-          (completing-read
-           "Project default concatenated mode: "
-           (let (collection)
-             (mapatoms
-              (lambda (atom)
-                (when (and (string-match "-mode\\'" (symbol-name atom))
-                           (not (string-match "^global-\\|-minor-mode\\'\\|--"
-                                              (symbol-name atom))))
-                  (push atom collection))))
-             collection)
-           nil t))))
-  (unless mode (user-error "Default mode must be a string"))
-  (if (assq 'default-concat-mode (binder-read))
-      (setf (alist-get 'default-concat-mode binder--cache) mode)
-    (push (cons 'default-concat-mode mode) binder--cache))
-  (binder-write)
-  (alist-get 'default-concat-mode binder--cache))
-
-(defun binder-set-file-extention (ext)
-  "Set the project file's `default-file-extension' value to EXT."
-  (interactive
-   (list (read-string "Project default file extension: ")))
-  (setq ext (string-remove-prefix "." ext))
-  (if (assq 'default-extension binder--cache)
-      (setf (alist-get 'default-extension binder--cache) ext)
-    (push (cons 'default-extension ext) binder--cache))
-  (binder-write)
-  (alist-get 'default-file-extension binder--cache))
 
 (defvar binder-navigation-map
   (let ((map (make-sparse-keymap)))
@@ -1224,19 +1190,13 @@ Calls `enlarge-window-horizontally' with `binder-sidebar-resize-window-step'."
   "Interactively set project-specific properties by CHAR."
   (declare (interactive-only t))
   (interactive
-   (list (read-char-choice "? = describe-mode, \
-m = set project default-concat-mode, \
-x = set project default-file-extension, \
-q = quit-window, \
-C-g = cancel: " '(?? ?m ?x ?q))))
+   (list (read-char-choice
+          "? = describe-mode, q = quit-window, C-g = cancel: "
+          '(?? ?q))))
   (cond ((= char ?q)
          (quit-window))
         ((= char ??)
-         (describe-mode))
-        ((= char ?m)
-         (call-interactively #'binder-set-concat-mode))
-        ((= char ?x)
-         (call-interactively #'binder-set-file-extention))))
+         (describe-mode))))
 
 ;;;###autoload
 (defun binder-reveal-in-sidebar ()
@@ -1522,8 +1482,8 @@ This command writes project data to disk."
 (defun binder-concat ()
   "Concatenate all project files marked as included.
 Creates `binder-concat-buffer' with each file separated by
-`binder-concat-separator' and sets the major mode to either the
-project `default-concat-mode' or `binder-default-concat-mode'.
+`binder-concat-separator' and sets the major mode to
+`binder-default-concat-mode'.
 
 See `binder-sidebar-toggle-include'."
   (interactive)
@@ -1532,9 +1492,7 @@ See `binder-sidebar-toggle-include'."
          (seq-filter
           (lambda (item) (alist-get 'include item))
           (binder-read t)))
-        (concat-fun
-         (or (alist-get 'default-concat-mode (binder-read))
-             binder-default-concat-mode)))
+        (concat-mode binder-default-concat-mode))
     (with-current-buffer (get-buffer-create binder-concat-buffer)
       (with-silent-modifications
         (erase-buffer)
@@ -1546,7 +1504,7 @@ See `binder-sidebar-toggle-include'."
             (insert binder-concat-separator)
             (put-text-property x (point) 'binder-original-file
                                (expand-file-name (car item) binder-project-directory)))))
-      (funcall concat-fun)
+      (funcall concat-mode)
       (binder-concat-mode t))
     (pop-to-buffer binder-concat-buffer)))
 
