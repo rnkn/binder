@@ -237,6 +237,7 @@
 (defvar binder-file-header
   "\
 ;; -*- coding: utf-8; -*-
+;; Binder-Format-Version: 2
 ;; This is a Binder project file. It is meant to be human-readable, but you
 ;; probably shouldn't edit it.\n\n"
   "Header information for binder-file.")
@@ -343,29 +344,19 @@ any time with `binder-change-directory'."
         binder--cache nil)
   (binder-set-unmodified))
 
-(defun binder-init-project-file ()
-  "Initialize an empty project file."
-  (let ((directory (or binder-project-directory default-directory)))
-    (when (y-or-n-p (format "Initialize empty %s in %s? "
-                            binder-default-file
-                            (abbreviate-file-name directory)))
-      (let ((binder-file
-             (expand-file-name binder-default-file directory)))
-        (with-temp-buffer
-          (insert binder-file-header
-                  (pp-to-string
-                   (list (cons 'structure nil))))
-          (write-file binder-file))
-        (binder-cd directory)
-        binder-file))))
+(defun binder-init ()
+  "Initialize an empty project file in `binder-project-directory'."
+  (with-temp-buffer
+    (insert binder-file-header
+            (pp-to-string nil))
+    (write-file (expand-file-name binder-default-file binder-project-directory))))
 
 (defun binder-find-project-file ()
   "Find or initialize current project file."
   (let ((binder-file
          (expand-file-name binder-default-file binder-project-directory)))
-    (if (file-exists-p binder-file)
-        binder-file
-      (binder-init-project-file))))
+    (unless (file-exists-p binder-file) (binder-init))
+    binder-file))
 
 (defun binder-write ()
   "Write project data to file."
@@ -408,9 +399,14 @@ Reads from `binder--cache' if valid, or from project file if not."
     (unless binder--cache
       (with-temp-buffer
         (insert-file-contents binder-file)
-        (goto-char (point-min))
-        (setq binder--cache (read (current-buffer)))
-        (binder-set-unmodified))))
+        ;; Read Binder-Format-Version header
+        (let ((version (lm-header "Binder-Format-Version")))
+          (goto-char (point-min))
+          (setq binder--cache (read (current-buffer)))
+          (unless (and (stringp version)
+                       (<= (string-to-number version) 2))
+            (setq binder--cache (alist-get 'structure binder--cache)))))
+      (binder-set-unmodified)))
   ;; Finally, return the cache.
   binder--cache)
 
@@ -443,36 +439,19 @@ Reads from `binder--cache' if valid, or from project file if not."
       (when (y-or-n-p (format "Set binder directory to %s?"
                               (abbreviate-file-name default-directory)))
         (binder-cd default-directory)
-        (binder-init-project-file))))))
+        (binder-init))))))
 
 (defun binder-file-relative-to-root (filepath)
   "Return FILEPATH relative to binder root directory."
   (string-remove-prefix (expand-file-name (or binder-project-directory ""))
                         (expand-file-name filepath)))
 
-(defun binder-get-structure (&optional narrow-tags exclude-tags)
-  "Return binder data structure component.
-With optional list of strings NARROW-TAGS, narrow results to only
-items with those tags. Likewise with EXCLUDE-TAGS, narrow results
-to only items without those tags."
-  (seq-filter
-   (lambda (item)
-     (and (seq-every-p
-           (lambda (tag)
-             (member tag (alist-get 'tags item)))
-           narrow-tags)
-          (seq-every-p
-           (lambda (tag)
-             (not (member tag (alist-get 'tags item))))
-           exclude-tags)))
-   (alist-get 'structure (binder-read))))
-
 (defun binder-get-item (fileid)
-  "Return binder item association list for FILEID."
-  (assoc-string fileid (binder-get-structure)))
+  "Return project item association list for FILEID."
+  (assoc-string fileid (binder-read t)))
 
 (defun binder-get-item-prop (fileid prop)
-  "Return value of PROP for binder item for FILEID."
+  "Return value of PROP for project item for FILEID."
   (alist-get prop (cdr (binder-get-item fileid))))
 
 (defun binder-set-item-prop (fileid prop value)
@@ -497,22 +476,21 @@ to only items without those tags."
       (binder-set-item-prop fileid prop (remove value prop-elt)))))
 
 (defun binder-get-item-index (fileid)
-  "Return index position for binder item for FILEID."
-  (seq-position (binder-get-structure binder-narrow-tags)
-                (binder-get-item fileid)))
+  "Return index position for project item for FILEID."
+  (seq-position (binder-read t) (binder-get-item fileid)))
 
 (defun binder-insert-item (item index)
   "Insert binder ITEM at position INDEX."
   (unless (listp item) (setq item (list item)))
-  (setcdr (assq 'structure (binder-read))
-          (let ((structure (binder-get-structure)))
-            (append (seq-take structure index)
-                    (cons item (seq-drop structure index))))))
+  (setq binder--cache
+       (let ((structure (binder-read)))
+         (append (seq-take structure index)
+                 (cons item (seq-drop structure index))))))
 
 (defun binder-delete-item (fileid)
   "Delete binder item for FILEID."
-  (setf (alist-get 'structure (binder-read))
-        (remove (binder-get-item fileid) (binder-get-structure))))
+  (setq binder--cache
+        (remove (binder-get-item fileid) (binder-read))))
 
 (defun binder-get-prop-list (prop)
   "Return list of values for PROP."
@@ -522,9 +500,9 @@ to only items without those tags."
            (let ((value (alist-get prop item)))
              (when (and (stringp value) (< 0 (string-width value)))
                value)))
-         (binder-get-structure))))
+         (binder-read))))
 
-(defun binder-get-tags (&optional current)
+(defun binder-get-tags (&optional filter)
   (let (tags)
     (mapc
      (lambda (item)
@@ -532,9 +510,7 @@ to only items without those tags."
         (lambda (tag)
           (push tag tags))
         (alist-get 'tags item)))
-     (apply 'binder-get-structure
-            (when current (list binder-narrow-tags
-                                binder-exclude-tags))))
+     (binder-read filter))
     (seq-uniq tags 'string-equal)))
 
 (defun binder-get-buffer-fileid ()
@@ -543,16 +519,6 @@ to only items without those tags."
        binder--current-fileid
      (binder-file-relative-to-root
       (or (buffer-file-name) default-directory))))
-
-(defun binder-filter-structure ()
-  "Return binder structure filtered by `binder-narrow-tags'."
-  (seq-filter
-   (lambda (item)
-     (seq-every-p
-      (lambda (tag)
-        (member tag (alist-get 'tags item)))
-      binder-narrow-tags))
-   (binder-get-structure)))
 
 
 ;;; Global Minor Mode
@@ -588,8 +554,7 @@ Or visit Nth previous file if N is negative."
   (when (binder-ensure-in-project)
     ;; Find the current file/directory fileid, if one.
     (let ((this-fileid (binder-get-buffer-fileid))
-          (structure (binder-get-structure
-                      binder-narrow-tags binder-exclude-tags))
+          (structure (binder-read t))
           index next-index)
       ;; If current file has an INDEX, get the NEXT-INDEX.
       (setq index (or (binder-get-item-index this-fileid) 0)
@@ -647,7 +612,7 @@ one, otherwise insert at end."
                (binder-get-item-index (binder-get-buffer-fileid))))
           (setq index (if this-file-index
                           (1+ this-file-index)
-                        (length (binder-get-structure))))))
+                        (length (binder-read))))))
       (binder-insert-item fileid index))
     (binder-write-maybe)
     ;; When binder sidebar is active, refresh it.
@@ -931,7 +896,7 @@ filter by tags."
             (put-text-property (line-beginning-position 0)
                                (line-beginning-position)
                                'face 'binder-sidebar-highlight))))
-       (binder-get-structure binder-narrow-tags binder-exclude-tags))
+       (binder-read t))
       (goto-char x))))
 
 (defun binder-sidebar-refresh-window ()
@@ -999,7 +964,8 @@ When ARG is non-nil, visit in new window."
 
 (defun binder-sidebar-get-index ()
   "Return binder index position at point."
-  (if (eobp) (1- (length (binder-get-structure)))
+  (if (eobp)
+      (1- (length (binder-read)))
     (binder-get-item-index (binder-sidebar-get-fileid))))
 
 (defun binder-sidebar-mark ()
@@ -1096,7 +1062,7 @@ When ARG is non-nil, do not prompt for confirmation."
 (defun binder-sidebar-clear-include ()
   "Make no items included in `binder-sidebar-concat'."
   (interactive)
-  (dolist (item (binder-get-structure))
+  (dolist (item (binder-read t))
     (binder-set-item-prop (car item) 'include nil))
   (binder-write-maybe)
   (binder-sidebar-refresh))
@@ -1166,7 +1132,7 @@ When ARG is non-nil, do not prompt for confirmation."
     (setq item (binder-get-item fileid)
           index (binder-get-item-index fileid))
     (when (<= 0 (+ index p)
-              (1- (length (binder-get-structure binder-narrow-tags))))
+              (1- (length (binder-read t))))
       (binder-delete-item fileid)
       (binder-insert-item item (+ index p))
       (binder-write-maybe)
@@ -1537,7 +1503,7 @@ See `binder-sidebar-toggle-include'."
   (let ((item-list
          (seq-filter
           (lambda (item) (alist-get 'include item))
-          (binder-get-structure)))
+          (binder-read t)))
         (concat-fun
          (or (alist-get 'default-concat-mode (binder-read))
              binder-default-concat-mode)))
