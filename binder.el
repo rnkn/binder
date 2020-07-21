@@ -539,6 +539,11 @@ With optional argument FILTER, call `binder-filter' on data."
 
 ;;; Global Minor Mode
 
+(defun binder-init-project (directory)
+  (interactive "DInitialize empty project in directory: ")
+  (binder-cd directory)
+  (binder-init))
+
 (defun binder-save (&optional prompt)
   "Save project data (with prompt when PROMPT is non-nil)."
   (interactive)
