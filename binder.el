@@ -1046,7 +1046,7 @@ When ARG is non-nil, do not prompt for confirmation."
                                     (string-join fileid-list ", "))))
       (mapc #'binder-delete-item fileid-list)
       (setq binder--sidebar-marked nil)))
-  (binder-write-maybe)
+  (binder-write)
   (binder-sidebar-refresh))
 
 (defun binder-sidebar-rename ()
