@@ -498,9 +498,11 @@ With optional argument FILTER, call `binder-filter' on data."
     (when (member value (binder-get-item-prop fileid 'tags))
       (binder-set-item-prop fileid prop (remove value prop-elt)))))
 
-(defun binder-get-item-index (fileid)
-  "Return index position for project item for FILEID."
-  (seq-position (binder-read t) (binder-get-item fileid)))
+(defun binder-get-item-index (fileid &optional filter)
+  "Return index position for project item for FILEID.
+With option argument FILTER, return index when items are
+filtered."
+  (seq-position (binder-read filter) (binder-get-item fileid)))
 
 (defun binder-insert-item (item index)
   "Insert binder ITEM at position INDEX."
@@ -588,7 +590,7 @@ Or visit Nth previous file if N is negative."
           (structure (binder-read t))
           index next-index)
       ;; If current file has an INDEX, get the NEXT-INDEX.
-      (setq index (or (binder-get-item-index this-fileid) 0)
+      (setq index (or (binder-get-item-index this-fileid t) 0)
             next-index (+ index n))
       ;; If NEXT-INDEX is within the filtered structure length, find the
       ;; Nth next/previous file.
@@ -639,7 +641,7 @@ one, otherwise insert at end."
     (unless (binder-get-item fileid)
       (unless index
         (let ((this-file-index
-               (binder-get-item-index (binder-get-buffer-fileid))))
+               (binder-get-item-index (binder-get-buffer-fileid) t)))
           (setq index (if this-file-index
                           (1+ this-file-index)
                         (length (binder-read))))))
@@ -961,7 +963,7 @@ When ARG is non-nil, visit in new window."
   "Return binder index position at point."
   (if (eobp)
       (1- (length (binder-read)))
-    (binder-get-item-index (binder-sidebar-get-fileid))))
+    (binder-get-item-index (binder-sidebar-get-fileid) t)))
 
 (defun binder-sidebar-mark ()
   "Mark the binder item at point."
@@ -1123,13 +1125,15 @@ When ARG is non-nil, do not prompt for confirmation."
   (interactive "p")
   (let ((p (if (<= n 0) -1 1))
         (fileid (binder-sidebar-get-fileid))
-        item index)
+        item fake-index next-index)
     (setq item (binder-get-item fileid)
-          index (binder-get-item-index fileid))
-    (when (<= 0 (+ index p)
+          fake-index (binder-get-item-index fileid t)
+          next-index (seq-position (binder-read)
+                                   (elt (binder-read t) (+ fake-index p))))
+    (when (<= 0 (+ fake-index p)
               (1- (length (binder-read t))))
       (binder-delete-item fileid)
-      (binder-insert-item item (+ index p))
+      (binder-insert-item item next-index)
       (binder-write-maybe)
       (binder-sidebar-refresh)
       (binder-sidebar-goto-item fileid))))
