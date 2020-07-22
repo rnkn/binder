@@ -819,6 +819,7 @@ filter by tags."
   (interactive "p")
   (with-silent-modifications
     (setq default-directory binder-project-directory)
+    (hack-local-variables)
     (binder-sidebar-format-header-line)
     (when clear-filter (setq binder-narrow-tags nil
                              binder-exclude-tags nil))
