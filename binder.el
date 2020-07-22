@@ -415,7 +415,7 @@ With optional argument FILTER, call `binder-filter' on data."
        ;; If the project file is newer than the cache, offer to revert from disk
        ;; (and write binder data), regardless, set the cache to nil.
        ((time-less-p binder--modification-time
-                     (nth 5 (file-attributes binder-file)))
+                     (elt (file-attributes binder-file) 5))
         (unless (y-or-n-p "Project file changed on disk; revert from disk? ")
           (binder-write))
         (setq binder--cache nil))))
@@ -597,7 +597,7 @@ Or visit Nth previous file if N is negative."
       (if (not (<= 0 next-index (1- (length structure))))
           (message "End of binder")
         (find-file-existing
-         (expand-file-name (car (nth next-index structure))
+         (expand-file-name (car (elt structure next-index))
                            binder-project-directory))
         (binder-sidebar-refresh-window))
       ;; Setup the overriding keymap.
