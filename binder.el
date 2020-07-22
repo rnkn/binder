@@ -38,10 +38,10 @@
 
 ;; ## Features ##
 
-;; Primarily, Binder provides a global minor mode binder-mode. This
-;; allows working with files in the current binder-project-directory.
-;; Data concerning these files is saved in a .binder.el file in the
-;; project directory. (You can change the name of this file with the
+;; Primarily, Binder provides a global minor mode binder-mode. This allows
+;; working with files in the current binder-project-directory. Data
+;; concerning these files is saved in a .binder.el file in the project
+;; directory. (You can change the name of this file with the
 ;; binder-default-file option.)
 
 ;; ## Navigation ##
@@ -73,9 +73,8 @@
 
 ;; 1. binder-sidebar-include-char (default x) denotes that this item is
 ;;    included when the "joining" the project (see **Concatentate** below).
-;; 2. binder-sidebar-notes-char (default *) denotes that this item has
-;;    some notes, which can be edited in binder-notes-mode (see below),
-;;    or...
+;; 2. binder-sidebar-notes-char (default *) denotes that this item has some
+;;    notes, which can be edited in binder-notes-mode (see below), or...
 ;; 3. binder-sidebar-missing-char (default ?) denote that the item's
 ;;    corresponding file cannot be found, but can be relocated by calling
 ;;    binder-sidebar-relocate (R). The item will also highlight red.
@@ -89,11 +88,10 @@
 ;; To add an existing file, call binder-sidebar-add-file (a) or add all
 ;; files in directory with binder-sidebar-add-all-files (A).
 
-;; Add a new file with binder-sidebar-new-file (M-RET). This prompts
-;; for a file-name and adds this (possibly non-existent) file to the
-;; project after the current file's index. If no file-name extension is
-;; provided, use value of the current project's default-extension
-;; property (default set with binder-default-file-extention option).
+;; Add a new file with binder-sidebar-new-file (M-RET). This prompts for a
+;; file-name and adds this (possibly non-existent) file to the project
+;; after the current file's index. If no file-name extension is provided,
+;; use binder-default-file-extention.
 
 ;; *Hint: you can use an alternate default file extension for different
 ;; projects by setting a directory local variable.*
@@ -101,12 +99,12 @@
 ;; Files can also be added to a project from outside the sidebar with
 ;; binder-add-file (C-c :).
 
-;; Remove items with binder-sidebar-remove (d) -- this *does not delete
-;; the files*, only removes them from the project, but it *does delete* the
+;; Remove items with binder-sidebar-remove (d) -- this *does not delete the
+;; files*, only removes them from the project, but it *does delete* the
 ;; corresponding notes and tags.
 
-;; Items can be reordered with binder-sidebar-shift-up (M-p or M-up)
-;; and binder-sidebar-shift-down (M-n or M-down).
+;; Items can be reordered with binder-sidebar-shift-up (M-p or M-up) and
+;; binder-sidebar-shift-down (M-n or M-down).
 
 ;; Hide item file extensions by setting the
 ;; binder-sidebar-hide-file-extensions option. This can be toggled with
@@ -211,12 +209,13 @@
 
 ;; ## Bugs and Feature Requests ##
 
-;; Report bugs and feature requests at: <https://github.com/rnkn/binder/issues>
+;; Report bugs and feature requests at:
+;; <https://github.com/rnkn/binder/issues>
 
 ;; ## Start Here ##
 
-;; This file is part of a Binder tutorial project. Enabled binder-mode and
-;; type C-c ; to reveal this file in the binder siderbar.
+;; This file is part of a Binder tutorial project. Enabled M-x binder-mode
+;; and type C-c ; to reveal this file in the binder siderbar.
 
 
 ;;; Code:
