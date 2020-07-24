@@ -177,9 +177,8 @@
 
 ;; When calling binder-sidebar-concat (c or v), project items marked as
 ;; included will be concatenated in a new buffer (separated by
-;; binder-concat-separator string.)
-
-;; The default mode of this buffer is set by binder-default-concat-mode.
+;; binder-concat-separator string.) The default mode of this buffer is set
+;; by binder-default-concat-mode.
 
 ;; *Hint: you can use an alternate default mode for different projects by
 ;; setting a directory local variable.*
