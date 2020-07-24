@@ -31,12 +31,11 @@
  ("tutorial/concat-3.txt"
   (tags "tutorial")
   (display . "tutorial/concat-editing"))
- ("tutorial/akai-ryu.jpg"
-  (display . "tutorial/akai-ryu.jpg")
-  (tags "tutorial" "image")
-  (notes . "The binder is not just for writing, but references too! Here's an image*\n\nDionaea muscipula \"Akai Ryu\", Japanese for \"Red Dragon\"\n~ Wikipedia\n\n* your Emacs may not support images :("))
+ ("tutorial/tree.jpg"
+  (notes . "The binder is not just for writing, but references too -- here's a photo of a tree!\n\nsource: https://commons.wikimedia.org/wiki/File:Ash_Tree_-_geograph.org.uk_-_590710.jpg")
+  (tags "tutorial"))
  ("tutorial/dog.txt"
   (notes . "ASCII art by jgs")
-  (tags "tutorial"))
+  (tags "ascii-art" "tutorial"))
  ("tutorial/end.txt"
   (tags "tutorial")))
