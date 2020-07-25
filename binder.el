@@ -1206,11 +1206,8 @@ Calls `enlarge-window-horizontally' with `binder-sidebar-resize-window-step'."
 
 ;;;###autoload
 (defun binder-reveal-in-sidebar ()
-  "Reveal current file in binder sidebar.
-
-Unconditionally activates `binder-mode'."
+  "Reveal current file in binder sidebar."
   (interactive)
-  (binder-mode)
   (let ((filepath (or (buffer-file-name) default-directory)))
     (select-window (binder-sidebar-create-window))
     (if (file-equal-p filepath (binder-root))
