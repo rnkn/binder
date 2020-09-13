@@ -205,6 +205,7 @@ projects on disk it's best to deactivate binder-mode first.")))
 
 ;;;###autoload
 (defun binder-tutorial (directory)
+  "Generate the Binder tutorial project in empty DIRECTORY."
   (interactive "DGenerate tutorial project in directory: ")
   (let ((default-directory directory))
     (mapc (lambda (item)

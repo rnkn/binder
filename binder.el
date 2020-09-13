@@ -447,7 +447,7 @@ With optional argument FILTER, call `binder-filter' on data."
      ;; current project root.
      ((and (stringp binder-project-directory)
            (stringp root))
-      (when (y-or-n-p (format "Outside of current project %s\nSwitch project directory to %s?"
+      (when (y-or-n-p (format "Outside of current project %s\nSwitch project directory to %s? "
                               binder-project-directory root))
         (binder-cd root)))
      ;; The project directory is set but we're not in a project; this is fine.
@@ -460,7 +460,7 @@ With optional argument FILTER, call `binder-filter' on data."
       (message "Set binder directory to %s" root))
      ;; A fresh project; offer to set project directory to default-directory.
      (t
-      (when (y-or-n-p (format "Set binder directory to %s?"
+      (when (y-or-n-p (format "Set binder directory to %s? "
                               (abbreviate-file-name default-directory)))
         (binder-cd default-directory)
         (binder-init))))))
@@ -475,11 +475,11 @@ With optional argument FILTER, call `binder-filter' on data."
   (assoc-string fileid (binder-read t)))
 
 (defun binder-get-item-prop (fileid prop)
-  "Return value of PROP for project item for FILEID."
+  "Return value of PROP for project item with FILEID."
   (cdr (assq prop (cdr (binder-get-item fileid)))))
 
 (defun binder-set-item-prop (fileid prop value)
-  "Set VALUE of PROP for binder item for FILEID."
+  "Set VALUE of PROP for project item with FILEID."
   (let ((item (binder-get-item fileid)))
     (if (or (null value) (and (stringp value) (string-empty-p value)))
         (setf item (assq-delete-all prop item))
@@ -489,12 +489,13 @@ With optional argument FILTER, call `binder-filter' on data."
           (push (cons prop value) (cdr item)))))))
 
 (defun binder-add-to-item-prop (fileid prop value)
-  "Add VALUE to PROP for binder item for FILEID."
+  "Add VALUE to PROP for project item with FILEID."
   (let ((prop-elt (binder-get-item-prop fileid prop)))
     (unless (member value prop-elt)
       (binder-set-item-prop fileid prop (push value prop-elt)))))
 
 (defun binder-remove-from-item-prop (fileid prop value)
+  "Remove VALUE from PROP for project item with FILEID."
   (let ((prop-elt (binder-get-item-prop fileid prop)))
     (when (member value (binder-get-item-prop fileid 'tags))
       (binder-set-item-prop fileid prop (remove value prop-elt)))))
@@ -506,7 +507,7 @@ filtered."
   (seq-position (binder-read filter) (binder-get-item fileid)))
 
 (defun binder-insert-item (item index)
-  "Insert binder ITEM at position INDEX."
+  "Insert project ITEM at position INDEX."
   (unless (listp item) (setq item (list item)))
   (setq binder--cache
        (let ((structure (binder-read)))
@@ -514,7 +515,7 @@ filtered."
                  (cons item (seq-drop structure index))))))
 
 (defun binder-delete-item (fileid)
-  "Delete binder item for FILEID."
+  "Delete project item with FILEID."
   (setq binder--cache
         (remove (binder-get-item fileid) (binder-read))))
 
@@ -529,7 +530,9 @@ filtered."
          (binder-read))))
 
 (defun binder-get-tags (&optional filter)
-  (let (tags)
+  "Return current project tags.
+Optionally pass FILTER to `binder-read'."
+(let (tags)
     (mapc
      (lambda (item)
        (mapc
@@ -553,6 +556,7 @@ filtered."
 ;;; Global Minor Mode
 
 (defun binder-init-project (directory)
+  "Initialize empty project in DIRECTORY."
   (interactive "DInitialize empty project in directory: ")
   (binder-cd directory)
   (binder-init))
@@ -563,7 +567,7 @@ filtered."
   (cond ((= 0 binder--modification-count)
          (message "(No changes need to be saved)"))
         ((and prompt
-              (y-or-n-p (format "Save binder project %s?"
+              (y-or-n-p (format "Save binder project %s? "
                                 (abbreviate-file-name binder-project-directory))))
          (binder-write))
         (t
@@ -811,6 +815,7 @@ Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
 (defvar binder--sidebar-marked nil)
 
 (defun binder-sidebar-format-header-line ()
+  "Format an appropriate window header-line for sidebar."
   (setq header-line-format
         (list :propertize (abbreviate-file-name binder-project-directory)
               'face 'bold)))
@@ -929,7 +934,7 @@ Defaults to current directory."
     (get-text-property (point) 'binder-fileid)))
 
 (defun binder-sidebar-goto-item (fileid)
-  "Move point to binder item with FILEID."
+  "Move point to project item with FILEID."
   (goto-char (point-min))
   ;; It would be nice to use find-next-text-property but that isn't
   ;; available until Emacs 27.
@@ -941,7 +946,7 @@ Defaults to current directory."
         (forward-line 1)))))
 
 (defun binder-sidebar-find-file (arg)
-  "Visit binder item at point.
+  "Visit project file at point.
 When ARG is non-nil, visit in new window."
   (interactive "P")
   (let ((pop-up-windows (or arg binder-sidebar-pop-up-windows))
@@ -954,7 +959,7 @@ When ARG is non-nil, visit in new window."
       (find-file filepath))))
 
 (defun binder-sidebar-find-file-other-window ()
-  "Visit binder item in other window."
+  "Visit project item at point in other window."
   (interactive)
   (binder-sidebar-find-file t))
 
@@ -967,14 +972,14 @@ When ARG is non-nil, visit in new window."
     (binder-get-item-index (binder-sidebar-get-fileid) t)))
 
 (defun binder-sidebar-mark ()
-  "Mark the binder item at point."
+  "Mark the project item at point."
   (interactive)
   (cl-pushnew (binder-sidebar-get-fileid) binder--sidebar-marked)
   (forward-line 1)
   (binder-sidebar-refresh))
 
 (defun binder-sidebar-unmark ()
-  "Unmark the binder item at point."
+  "Unmark the project item at point."
   (interactive)
   (setq binder--sidebar-marked
         (remove (binder-sidebar-get-fileid) binder--sidebar-marked))
@@ -982,7 +987,7 @@ When ARG is non-nil, visit in new window."
   (binder-sidebar-refresh))
 
 (defun binder-sidebar-unmark-all ()
-  "Unmark all binder items."
+  "Unmark all project items."
   (interactive)
   (setq binder--sidebar-marked nil)
   (binder-sidebar-refresh))
@@ -1000,7 +1005,7 @@ When ARG is non-nil, visit in new window."
 (defun binder-sidebar-add-all-files ()
   "Add all files in current directory to binder."
   (interactive)
-  (when (y-or-n-p (format "Add all files in %s"
+  (when (y-or-n-p (format "Add all files in %s? "
                           (abbreviate-file-name default-directory)))
     (dolist (file (directory-files default-directory nil "^[^.]"))
       (binder-sidebar-add-file file))))
@@ -1019,7 +1024,7 @@ When ARG is non-nil, do not prompt for confirmation."
   (interactive "P")
   (let ((fileid-list (or binder--sidebar-marked
                       (list (binder-sidebar-get-fileid)))))
-    (when (or arg (y-or-n-p (format "Really remove %s?"
+    (when (or arg (y-or-n-p (format "Really remove %s? "
                                     (string-join fileid-list ", "))))
       (mapc #'binder-delete-item fileid-list)
       (setq binder--sidebar-marked nil)))
@@ -1027,7 +1032,7 @@ When ARG is non-nil, do not prompt for confirmation."
   (binder-sidebar-refresh))
 
 (defun binder-sidebar-rename ()
-  "Change display name of binder item at point."
+  "Change display name of project item at point."
   (interactive)
   (let ((fileid (binder-sidebar-get-fileid))
         name)
@@ -1039,7 +1044,7 @@ When ARG is non-nil, do not prompt for confirmation."
     (binder-sidebar-refresh)))
 
 (defun binder-sidebar-relocate (filepath)
-  "Change file path of binder item at point to FILEPATH."
+  "Change file path of project item at point to FILEPATH."
   (interactive "fNew file path: ")
   (setq filepath (binder-file-relative-to-root filepath))
   (setcar (binder-get-item (binder-sidebar-get-fileid)) filepath)
