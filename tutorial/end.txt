@@ -1,5 +1,0 @@
-This is currently alpha-level software, so:
-
-!!!! Please remember to SAVE YOUR BINDER DATA. !!!!
-
-Save in the sidebar with s or C-x C-s.
