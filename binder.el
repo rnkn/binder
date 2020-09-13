@@ -211,10 +211,10 @@
 ;; Report bugs and feature requests at:
 ;; <https://github.com/rnkn/binder/issues>
 
-;; ## Start Here ##
+;; ## Tutorial ##
 
-;; This file is part of a Binder tutorial project. Enabled M-x binder-mode
-;; and type C-c ; to reveal this file in the binder siderbar.
+;; Binder comes with a tutorial. Calling M-x binder-tutorial will prompt
+;; for an empty directory in which to generate the tutorial files.
 
 
 ;;; Code:
