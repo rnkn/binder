@@ -10,5 +10,5 @@ about: For problems with Binder
 3. ... etc.
 
 
-- `M-x emacs-version`:
+- `M-: emacs-version`:
 - `M-: binder-version`:
