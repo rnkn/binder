@@ -91,7 +91,7 @@
 ;; Add a new file with binder-sidebar-new-file (M-RET). This prompts for a
 ;; file-name and adds this (possibly non-existent) file to the project
 ;; after the current file's index. If no file-name extension is provided,
-;; use binder-default-file-extention.
+;; use binder-default-file-extension.
 
 ;; *Hint: you can use an alternate default file extension for different
 ;; projects by setting a directory local variable.*
@@ -279,7 +279,7 @@ any time with `binder-change-directory'."
   :safe 'stringp
   :group 'binder)
 
-(defcustom binder-default-file-extention
+(defcustom binder-default-file-extension
   "txt"
   "Default extension for new binder files."
   :type 'string
@@ -633,7 +633,7 @@ one, otherwise insert at end."
               (and (string-match "\\.[^.]+\\'" fileid)
                    (not (= 0 (match-beginning 0)))))
     (setq fileid
-          (concat fileid "." binder-default-file-extention)))
+          (concat fileid "." binder-default-file-extension)))
   ;; If the file/directory does not exist, create it.
   (let ((filepath (expand-file-name fileid binder-project-directory)))
     (unless (file-exists-p filepath)
