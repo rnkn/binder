@@ -138,7 +138,7 @@
 
 ;; Items listed in the sidebar can be narrowed to only show items with a
 ;; certain tag with binder-sidebar-narrow-by-tag (/) and/or only show items
-;; without a certain tag with binder-sidebar-exclude-by-tag (\). Each of
+;; without a certain tag with binder-sidebar-exclude-by-tag (\\). Each of
 ;; these commands can be called multiple times with additional tags. Reset
 ;; the sidebar with binder-sidebar-refresh (g).
 
@@ -158,8 +158,8 @@
 ;; binder-notes-save-and-quit-window (C-c C-c).
 
 ;; You can embiggen the notes window, to pop it out from the sidebar and
-;; edit like a regular buffer window, with binder-notes-expand-window (C-c
-;; C-l).
+;; edit like a regular buffer window, with binder-notes-expand-window
+;; (C-c C-l).
 
 ;; If you want the notes buffer to stay in sync with the item under the
 ;; cursor in the sidebar, change the option binder-notes-keep-in-sync. This
