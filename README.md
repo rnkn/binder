@@ -66,7 +66,7 @@ files in directory with `binder-sidebar-add-all-files` (A).
 Add a new file with `binder-sidebar-new-file` (M-RET). This prompts for a
 file-name and adds this (possibly non-existent) file to the project
 after the current file's index. If no file-name extension is provided,
-use `binder-default-file-extention`.
+use `binder-default-file-extension`.
 
 *Hint: you can use an alternate default file extension for different
 projects by setting a directory local variable.*
