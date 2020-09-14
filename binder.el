@@ -198,7 +198,7 @@
 ;; narrowing.
 
 ;; [org mode]: https://orgmode.org
-;; [markdown]: http://jblevins.org/projects/markdown-mode/
+;; [markdown]: https://jblevins.org/projects/markdown-mode/
 ;; [fountain]: https://github.com/rnkn/fountain-mode
 
 ;; ## Requirements ##
@@ -691,10 +691,10 @@ one, otherwise insert at end."
   :global t
   (if binder-mode
       (unless noninteractive
-        (add-hook 'kill-emacs-hook 'binder-exit-hook)
-        (add-hook 'window-configuration-change-hook 'binder-highlight-in-sidebar))
+        (add-hook 'kill-emacs-hook #'binder-exit-hook)
+        (add-hook 'window-configuration-change-hook #'binder-highlight-in-sidebar))
     (binder-save 'prompt)
-    (remove-hook 'window-configuration-change-hook 'binder-highlight-in-sidebar)
+    (remove-hook 'window-configuration-change-hook #'binder-highlight-in-sidebar)
     (when (window-live-p (get-buffer-window binder-sidebar-buffer))
       (with-selected-window (get-buffer-window binder-sidebar-buffer)
         (quit-window t)))
@@ -843,9 +843,9 @@ filter by tags."
                marked missing tags-overwrite)
            ;; Set whether FILEID is MARKED and MISSING.
            (when (member fileid binder--sidebar-marked)
-            (setq marked t))
-          (when (not (file-exists-p fileid))
-            (setq missing t))
+             (setq marked t))
+           (when (not (file-exists-p fileid))
+             (setq missing t))
           ;; Insert the item line elements.
           (insert (cond (marked ">")
                         (include binder-sidebar-include-char)
@@ -907,7 +907,7 @@ filter by tags."
     (with-current-buffer binder-sidebar-buffer
       (binder-sidebar-refresh))))
 
-(defalias 'binder-sidebar-change-directory 'binder-change-directory)
+(defalias 'binder-sidebar-change-directory #'binder-change-directory)
 
 (defun binder-sidebar-create-buffer ()
   "Return binder sidebar buffer for DIRECTORY."
@@ -939,8 +939,7 @@ Defaults to current directory."
   ;; It would be nice to use find-next-text-property but that isn't
   ;; available until Emacs 27.
   (let (found)
-    (while (and (< (point) (point-max))
-                (not found))
+    (while (not (or (eobp) found))
       (if (string= (binder-sidebar-get-fileid) fileid)
           (setq found t)
         (forward-line 1)))))
@@ -963,7 +962,7 @@ When ARG is non-nil, visit in new window."
   (interactive)
   (binder-sidebar-find-file t))
 
-(defalias 'binder-sidebar-save 'binder-save)
+(defalias 'binder-sidebar-save #'binder-save)
 
 (defun binder-sidebar-get-index ()
   "Return binder index position at point."
@@ -1283,7 +1282,7 @@ Unconditionally activates `binder-mode'."
 (define-derived-mode binder-sidebar-mode
   special-mode "Binder Sidebar"
   "Major mode for working with `binder' projects."
-  (add-hook 'post-command-hook 'binder-sidebar-sync-notes t t))
+  (add-hook 'post-command-hook #'binder-sidebar-sync-notes t t))
 
 
 ;;; Notes Major Mode
@@ -1453,17 +1452,21 @@ This command writes project data to disk."
       (setq binder--notes-fileid (binder-sidebar-get-fileid))
       (binder-notes-refresh-window))))
 
+(defvar binder-notes-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-c") #'binder-notes-save-and-quit-window)
+    (define-key map [remap save-buffer] #'binder-notes-save)
+    (define-key map (kbd "C-c C-l") #'binder-notes-expand-window)
+    (define-key map (kbd "C-c C-q") #'quit-window)
+    (define-key map (kbd "C-c C-k") #'quit-window)
+    map)
+  "Mode map for `binder-notes-mode'.")
+
 ;;;###autoload
 (define-derived-mode binder-notes-mode
   text-mode "Binder Notes Mode"
   "Major mode for editing `binder' notes."
   (binder-notes-refresh))
-
-(define-key binder-notes-mode-map (kbd "C-c C-c") #'binder-notes-save-and-quit-window)
-(define-key binder-notes-mode-map [remap save-buffer] #'binder-notes-save)
-(define-key binder-notes-mode-map (kbd "C-c C-l") #'binder-notes-expand-window)
-(define-key binder-notes-mode-map (kbd "C-c C-q") #'quit-window)
-(define-key binder-notes-mode-map (kbd "C-c C-k") #'quit-window)
 
 
 ;;; Concat Mode
@@ -1523,7 +1526,7 @@ See `binder-sidebar-toggle-include'."
           (pop-to-buffer binder-concat-buffer))
       (pop-to-buffer binder-concat-buffer))))
 
-(defalias 'binder-sidebar-concat 'binder-concat)
+(defalias 'binder-sidebar-concat #'binder-concat)
 
 (defun binder-concat-find-original ()
   "Find the file containing content at point."
