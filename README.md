@@ -57,7 +57,7 @@ Each item in the sidebar displays the following information:
    directory or an arbitrary display name, which can be set by calling
    `binder-sidebar-rename` (r).
 5. The item tags, each prefixed with `binder-sidebar-status-char` (default
-   `#`). The tags column can be set with the `binder-sidebar-tags-column`
+   #). The tags column can be set with the `binder-sidebar-tags-column`
    option.
 
 To add an existing file, call `binder-sidebar-add-file` (a) or add all
@@ -97,8 +97,8 @@ You can customize how the sidebar window is displayed by setting
 Multiple items can be marked to add tags, toggle include state or
 delete.
 
-Call `binder-sidebar-mark` (m) to mark an item. Call `binder-sidebar-unmark
-(u)` to unmark an item or `binder-sidebar-unmark-all` (U) for all sidebar
+Call `binder-sidebar-mark` (m) to mark an item. Call `binder-sidebar-unmark`
+(u) to unmark an item or `binder-sidebar-unmark-all` (U) for all sidebar
 items.
 
 ### Tags ###
@@ -113,7 +113,7 @@ items at once by using marks.
 
 Items listed in the sidebar can be narrowed to only show items with a
 certain tag with `binder-sidebar-narrow-by-tag` (/) and/or only show items
-without a certain tag with `binder-sidebar-exclude-by-tag` (\). Each of
+without a certain tag with `binder-sidebar-exclude-by-tag` (\\). Each of
 these commands can be called multiple times with additional tags. Reset
 the sidebar with `binder-sidebar-refresh` (g).
 
@@ -133,8 +133,8 @@ notes. You need to call either `binder-notes-save` (C-x C-s) or
 `binder-notes-save-and-quit-window` (C-c C-c).
 
 You can embiggen the notes window, to pop it out from the sidebar and
-edit like a regular buffer window, with `binder-notes-expand-window (C-c
-C-l)`.
+edit like a regular buffer window, with `binder-notes-expand-window`
+(C-c C-l).
 
 If you want the notes buffer to stay in sync with the item under the
 cursor in the sidebar, change the option `binder-notes-keep-in-sync`. This
