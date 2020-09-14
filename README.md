@@ -173,7 +173,7 @@ to organize a large file with headings and use indirect buffers with
 narrowing.
 
 [org mode]: https://orgmode.org
-[markdown]: http://jblevins.org/projects/markdown-mode/
+[markdown]: https://jblevins.org/projects/markdown-mode/
 [fountain]: https://github.com/rnkn/fountain-mode
 
 ## Requirements ##
