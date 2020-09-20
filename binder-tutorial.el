@@ -156,7 +156,7 @@ T and enter the tag. These commands work either with the item at point,
 or all marked items.
 
 Some tags are already added to play with. Type / then \"foo\" to narrow
-the sidebar to only items tagged \"foo\". Now type \ then \"bar\" to exclude
+the sidebar to only items tagged \"foo\". Now type \\ then \"bar\" to exclude
 sidebar items tagged \"bar\".
 
 You should have a sidebar with only this item showing.
