@@ -219,13 +219,9 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'cl-lib)
-  (require 'subr-x)
-  (require 'lisp-mnt)
-  (defconst binder-version
-    (lm-version load-file-name)))
-
+(eval-when-compile (require 'cl-lib))
+(eval-when-compile (require 'subr-x))
+(require 'lisp-mnt)
 (require 'seq)
 
 (defgroup binder ()
