@@ -11,4 +11,4 @@ about: For problems with Binder
 
 
 - `M-: emacs-version`:
-- `M-: binder-version`:
+- `M-: (lm-version "binder.el")`:
