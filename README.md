@@ -1,5 +1,8 @@
 # Binder #
 
+[![MELPA Stable](https://stable.melpa.org/packages/binder-badge.svg)](https://stable.melpa.org/#/binder)
+[![MELPA](https://melpa.org/packages/binder-badge.svg)](https://melpa.org/#/binder)
+
 ![screenshot](https://user-images.githubusercontent.com/1256849/87218460-464a3300-c396-11ea-9ce7-30f7a5bc4377.png)
 
 Binder is global minor mode (and associated major modes) to facilitate
