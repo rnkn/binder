@@ -1296,7 +1296,7 @@ Unconditionally activates `binder-mode'."
 
 (defcustom binder-notes-display-alist
   '((side . left)
-    (window-width . 50)
+    (window-width . 40)
     (slot . 1))
   "Association list used to display binder notes buffer.
 
