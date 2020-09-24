@@ -707,6 +707,10 @@ one, otherwise insert at end."
   "Options for `binder-sidebar-mode'."
   :group 'binder)
 
+(defface binder-sidebar
+  '((t nil))
+  "Default base-level face for `binder-sidebar-mode' buffers.")
+
 (defcustom binder-sidebar-buffer "*Binder Sidebar*"
   "Default buffer name for binder sidebar."
   :type 'string
@@ -1282,10 +1286,15 @@ Unconditionally activates `binder-mode'."
 (define-derived-mode binder-sidebar-mode
   special-mode "Binder Sidebar"
   "Major mode for working with `binder' projects."
+  (face-remap-add-relative 'default 'binder-sidebar)
   (add-hook 'post-command-hook #'binder-sidebar-sync-notes t t))
 
 
 ;;; Notes Major Mode
+
+(defface binder-notes
+  '((t nil))
+  "Default base-level face for `binder-notes-mode' buffers.")
 
 (defcustom binder-notes-buffer
   "*Binder Notes*"
@@ -1466,6 +1475,7 @@ This command writes project data to disk."
 (define-derived-mode binder-notes-mode
   text-mode "Binder Notes Mode"
   "Major mode for editing `binder' notes."
+  (face-remap-add-relative 'default 'binder-notes)
   (binder-notes-refresh))
 
 
