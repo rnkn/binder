@@ -1152,7 +1152,8 @@ When ARG is non-nil, do not prompt for confirmation."
   (binder-sidebar-goto-item binder--current-fileid))
 
 (defun binder-sidebar-narrow-by-tag (tag)
-  "Filter sidebar items to include items with TAG."
+  "\\<binder-sidebar-mode-map>Filter sidebar items to include items with TAG.
+To reset filtering call `binder-sidebar-refresh' (\\[binder-sidebar-refresh])."
   (interactive
    (list (completing-read
           "Narrow items by tag: " (binder-get-tags)
@@ -1162,7 +1163,8 @@ When ARG is non-nil, do not prompt for confirmation."
     (binder-sidebar-refresh)))
 
 (defun binder-sidebar-exclude-by-tag (tag)
-  "Filter sidebar items to exclude items with TAG."
+  "\\<binder-sidebar-mode-map>Filter sidebar items to exclude items with TAG.
+To reset filtering call `binder-sidebar-refresh' (\\[binder-sidebar-refresh])."
   (interactive
    (list (completing-read
           "Exclude items by tag: " (binder-get-tags)
@@ -1198,13 +1200,13 @@ Calls `enlarge-window-horizontally' with `binder-sidebar-resize-window-step'."
   "Interactively set project-specific properties by CHAR."
   (declare (interactive-only t))
   (interactive
-   (list (read-char-choice
-          "? = describe-mode, q = quit-window, C-g = cancel: "
-          '(?? ?q))))
-  (cond ((= char ?q)
-         (quit-window))
-        ((= char ??)
-         (describe-mode))))
+   (list (read-char-choice "\
+? = describe-mode, g = refresh (clear filters), q = quit-window, C-g = cancel: "
+                           '(?? ?g ?q))))
+  (cl-case char
+    (?q (quit-window))
+    (?g (binder-sidebar-refresh t))
+    (?? (describe-mode))))
 
 ;;;###autoload
 (defun binder-reveal-in-sidebar ()
