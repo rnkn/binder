@@ -167,7 +167,8 @@ project files you want to work with in the sidebar.
 When the sidebar items are filtered, navigating backward/forward only
 considers those items.
 
-Type g to clear the tag filters and refresh the sidebar.")
+Type g to clear the tag filters and refresh the sidebar, then C-c ] to
+go to the next file.")
     ("concat.txt" . "\
 Notice that the tutorial items for navigating, sidebar and marking are
 marked with an x? These items are included when you concatenate the
@@ -196,7 +197,9 @@ Now type c again.")
 
 This is how you go from viewing a concatenated project as a whole back
 to the original file for editing. The concat view is good for
-proofreading and creating a final export, but not editing.")
+proofreading and creating a final export, but not editing.
+
+Type C-c ] to go to the next file.")
     ("errors.txt" . "\
 Binder caches project information to avoid contious reading and writing
 to disk. However this means errors may occur if a project is moved on
