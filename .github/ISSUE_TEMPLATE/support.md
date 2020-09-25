@@ -9,6 +9,6 @@ about: Additional help with Binder
 
 ## I acknowledge I have...
 
-- [ ] read the README file
+- [ ] read the README or code Commentary
 - [ ] read the help provided by `C-h m`
 - [ ] completed the tutorial with `M-x binder-tutorial`
