@@ -59,31 +59,31 @@
 
 ;; You'll mostly interact with the project structure via the sidebar.
 
-;; - binder-toggle-sidebar (C-c ') toggles the visibility of the binder
-;;   sidebar.
-;; - binder-reveal-in-sidebar (C-c ;) finds the current file in the
-;;   sidebar.
+;; -  binder-toggle-sidebar (C-c ') toggles the visibility of the binder
+;;    sidebar
+;; -  binder-reveal-in-sidebar (C-c ;) finds the current file in the
+;;    sidebar
 
-;; Each project item is a file, referenced relative to the project
-;; directory. Project items are displayed in a linear ordered list. Calling
-;; binder-sidebar-find-file (RET) or binder-sidebar-find-file-other-window (o)
-;; will visit the corresponding file.
+;; Each project items is a file reference relative to the project
+;; directory. Items are displayed as:
 
-;; Each item in the sidebar displays the following information:
+;;     x * name        #tag1 #tag2
 
-;; 1. binder-sidebar-include-char (default x) denotes that this item is
-;;    included when the "joining" the project (see **Concatentate** below).
-;; 2. binder-sidebar-notes-char (default *) denotes that this item has some
-;;    notes, which can be edited in binder-notes-mode (see below), or...
-;; 3. binder-sidebar-missing-char (default ?) denote that the item's
-;;    corresponding file cannot be found, but can be relocated by calling
-;;    binder-sidebar-relocate (R). The item will also highlight red.
-;; 4. The item name, which is either the file relative to the project
-;;    directory or an arbitrary display name, which can be set by calling
-;;    binder-sidebar-rename (r).
-;; 5. The item tags, each prefixed with binder-sidebar-status-char
-;;    (default #). The tags column can be set with the
-;;    binder-sidebar-tags-column option.
+;; These things mean:
+
+;; |------|-------------------------------------------------|
+;; | x    | item is included when concatenating the project |
+;; | *    | item has notes                                  |
+;; | ?    | the item's corresponding file cannot be found   |
+;; | name | the file name (or custom display name)          |
+;; | #tag | arbitrary item tags                             |
+;; |------|-------------------------------------------------|
+
+;; An item's display name can be changed with binder-sidebar-rename (r).
+;; If a file cannot be found, relocate with binder-sidebar-relocate (R).
+
+;; Calling binder-sidebar-find-file (RET) will visit the corresponding
+;; file.
 
 ;; To add an existing file, call binder-sidebar-add-file (a) or add all
 ;; files in directory with binder-sidebar-add-all-files (A).
