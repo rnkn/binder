@@ -4,7 +4,7 @@ Binder
 [![MELPA Stable](https://stable.melpa.org/packages/binder-badge.svg)][1]
 [![MELPA](https://melpa.org/packages/binder-badge.svg)][2]
 
-![screenshot](https://user-images.githubusercontent.com/1256849/87218460-464a3300-c396-11ea-9ce7-30f7a5bc4377.png)
+![screenshot](screenshots/01.png)
 
 Binder is global minor mode to facilitate working on a writing project
 in multiple files. It is heavily inspired by the binder feature in the
