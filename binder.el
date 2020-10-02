@@ -230,7 +230,7 @@
 ;; Advanced Installation
 ;; ---------------------
 
-;; Download the [latest release][4], move this file into your load-path
+;; Download the latest tagged release, move this file into your load-path
 ;; and add to your init.el file:
 
 ;;     (require 'binder)
@@ -261,7 +261,6 @@
 ;; [1]: https://stable.melpa.org/#/binder
 ;; [2]: https://melpa.org/#/binder
 ;; [3]: https://www.literatureandlatte.com/scrivener/
-;; [4]: https://github.com/rnkn/binder/releases/latest
 
 
 ;;; Code:
