@@ -12,6 +12,6 @@
  '(binder-notes
    ((default (:height 0.9))
     (((background light)) (:background "#fefbe8"))
-    (((background dark)) (:background "#33302f")))))
+    (((background dark)) (:background "#302c2c")))))
 
 (provide-theme 'binder)
