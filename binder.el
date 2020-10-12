@@ -586,13 +586,10 @@ Optionally pass FILTER to `binder-read'."
 
 (defun binder-get-buffer-fileid ()
   "Return buffer binder fileid."
-   (cond ((eq major-mode 'binder-sidebar-mode)
-          binder--current-fileid)
-         ((eq major-mode 'binder-notes-mode)
-          binder--notes-fileid)
-         (t
-          (binder-file-relative-to-root
-           (or (buffer-file-name) default-directory)))))
+  (cl-case major-mode
+    ((quote binder-sidebar-mode) binder--current-fileid)
+    ((quote binder-notes-mode)   binder--notes-fileid)
+    (t (binder-file-relative-to-root (buffer-file-name)))))
 
 
 ;;; Global Minor Mode
