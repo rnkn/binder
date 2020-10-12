@@ -508,10 +508,9 @@ With optional argument FILTER, call `binder-filter' on data."
         (binder-init))))))
 
 (defun binder-file-relative-to-root (filepath)
-  "Return FILEPATH relative to binder root directory."
-  (let ((dir (expand-file-name (or binder-project-directory ""))))
-    (unless (string-suffix-p "/" dir) (setq dir (concat dir "/")))
-    (string-remove-prefix dir (expand-file-name filepath))))
+  "Return FILEPATH relative to `binder-project-directory'."
+  (file-relative-name (or filepath default-directory)
+                      binder-project-directory))
 
 (defun binder-get-item (fileid)
   "Return project item association list for FILEID."
