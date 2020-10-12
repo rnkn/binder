@@ -453,7 +453,8 @@ With optional argument FILTER, call `binder-filter' on data."
         (user-error "No binder file found"))
        ;; If the cache doesn't refer to the project directory, set the cache to
        ;; nil.
-       ((not (file-equal-p binder-project-directory (binder-root)))
+       ((and (binder-root)
+             (not (file-equal-p binder-project-directory (binder-root))))
         (setq binder--cache nil))
        ;; If the project file is newer than the cache, offer to revert from disk
        ;; (and write binder data), regardless, set the cache to nil.
