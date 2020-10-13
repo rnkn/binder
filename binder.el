@@ -737,6 +737,10 @@ one, otherwise insert at end."
         (add-hook 'window-configuration-change-hook #'binder-highlight-in-sidebar))
     (binder-save 'prompt)
     (remove-hook 'window-configuration-change-hook #'binder-highlight-in-sidebar)
+    ;;
+    ;; FIXME: This does not kill project & notes windows when focus is on
+    ;; another frame.
+    ;;
     (when (window-live-p (get-buffer-window binder-sidebar-buffer))
       (with-selected-window (get-buffer-window binder-sidebar-buffer)
         (quit-window t)))
@@ -873,7 +877,12 @@ filter by tags."
   (interactive "p")
   (with-silent-modifications
     (setq default-directory binder-project-directory)
-    ;; FIXME: this can cause a segfault
+    ;;
+    ;; FIXME: This can cause a segfault. An endless loop is triggered if the
+    ;; user does not accept the local variables as safe. Disabling this means
+    ;; the user is unable to set `binder-default-concat-mode' or
+    ;; `binder-default-file-extension'.
+    ;;
     ;; (hack-local-variables)
     (binder-sidebar-format-header-line)
     (when clear-filter (setq binder-narrow-tags nil
@@ -1171,7 +1180,6 @@ When ARG is non-nil, do not prompt for confirmation."
             (if binder-sidebar-hide-tags
                 "hiding" "showing"))))
 
-;; FIXME: fails with filtered structure
 (defun binder-sidebar-shift-down (&optional n)
   "Shift index position of item at point down N places in list."
   (interactive "p")
