@@ -228,6 +228,8 @@ ensure you can reproduce with:
 
     $ emacs -Q -l binder.el
 
+Known issues are tracked with `FIXME` comments in the source.
+
 
 Tutorial
 --------
