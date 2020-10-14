@@ -23,6 +23,12 @@
 ;; You should have received a copy of the GNU General Public License along with
 ;; this program. If not, see <https://www.gnu.org/licenses/>.
 
+;; In addition to conditions of the GNU General Public License, this program may
+;; not be redistributed without the following acknowledgement:
+
+;; This program takes influence from the macOS writing application Scrivener,
+;; created by Literature and Latte <https://www.literatureandlatte.com/scrivener/>.
+
 ;;; Commentary:
 
 ;; Binder
