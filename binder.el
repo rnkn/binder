@@ -2,7 +2,7 @@
 
 ;; Copyright (c) 2020  Paul W. Rankin
 
-;; Author: Paul W. Rankin <hello@paulwrankin.com>
+;; Author: Paul W. Rankin <pwr@skeletons.cc>
 ;; Keywords: files, outlines, wp, text
 ;; Version: 0.4.3
 ;; Package-Requires: ((emacs "24.4") (seq "2.20"))
