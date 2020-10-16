@@ -745,15 +745,11 @@ one, otherwise insert at end."
         (add-hook 'window-configuration-change-hook #'binder-highlight-in-sidebar))
     (binder-save 'prompt)
     (remove-hook 'window-configuration-change-hook #'binder-highlight-in-sidebar)
-    ;;
-    ;; FIXME: This does not kill project & notes windows when focus is on
-    ;; another frame.
-    ;;
-    (when (window-live-p (get-buffer-window binder-sidebar-buffer))
-      (with-selected-window (get-buffer-window binder-sidebar-buffer)
+    (when (window-live-p (get-buffer-window binder-sidebar-buffer t))
+      (with-selected-window (get-buffer-window binder-sidebar-buffer t)
         (quit-window t)))
-    (when (window-live-p (get-buffer-window binder-notes-buffer))
-      (with-selected-window (get-buffer-window binder-notes-buffer)
+    (when (window-live-p (get-buffer-window binder-notes-buffer t))
+      (with-selected-window (get-buffer-window binder-notes-buffer t)
         (quit-window t)))
     (setq binder--cache nil)))
 
