@@ -1,0 +1,108 @@
+* current
+
+- History is now tracked in a fancy NEWS file
+
+* Version 0.4.3
+
+- Use file-relative-name for binder-file-relative-to-root -- this will
+  set a fileid outside of the project directory as a relative path
+  instead of absolute
+- Add faces binder-sidebar and binder-notes with face remap to default
+- Quit and kill binder side windows in all frames on quit
+- Remove call to hack-local-variables from binder-sidebar-refresh, as
+  this can cause a segfault
+- Make safer use of set-transient-map
+- Add hints for clearing sidebar tag filters (g key)
+- Add binder-theme.el to contrib/
+- Small imporvements to tutorial
+- Track known issues with FIXME comments in source
+- Stipulate acknowledgement of Scrivener in redistribution terms
+- Update email, and upstream URL to https://git.skeletons.cc/binder
+- Update repository for portability (add a screenshot, no more relying
+  on GitHub stuff)
+
+* Version 0.4.2
+
+- Give notes window same display alist as sidebar window
+- Fix byte-compile issue with lisp-mnt (just don't use it)
+
+* Version 0.4.1
+
+- Correct spelling of option binder-default-file-extension
+
+* Version 0.4.0
+
+- Implement binder-tutorial as separate library
+- Don't call binder-mode from binder-reveal-in-sidebar
+
+* Version 0.3.1
+
+This release marks Binder as no longer in alpha status.
+
+- Ensure notes window keeps track of fileid
+
+    - No longer set pop-up-windows as buffer-local in sidebar, set it
+      lexically.
+    - binder-get-buffer-fileid returns binder--notes-fileid when in
+      notes window.
+    - binder-show-notes now takes FILEID and SELECT to make tracking
+      notes fileid easier, no longer needing to find it from sidebar.
+
+- Hack local variables when refreshing sidebar
+- Implement item shifting when filtered by tag
+- Prefer elt to nth
+
+* Version 0.3.0
+
+Changes
+
+- Change project file format to version 2 (adds binder-upgrade subr)
+- Implement binder-init-project command
+- Implement binder-sidebar-toggle-hide-tags command
+- Add binder-filter function
+- Rename binder-concat-find-original-file -> binder-concat-find-original
+- Change binder-concat-find-original key binding to C-c RET
+- Revert key binding for binder-sidebar-change-directory (P -> C)
+- Save project and clear cache on quit
+- Always write project data to file on delete item
+- Lower Emacs version requirement to 24.4
+- Prefer "project" to "binder" in var names and docs
+- Update tutorial
+
+Fixes
+
+- Rewrite binder-read
+- Fix binder-concat-mode-map var name
+- Clear tags filter on binder-cd
+- Remove binder-sidebar-set-status command (use binder-sidebar-add-tag)
+- Call binder-cd when initializing a project
+- Only find project file within binder-project-directory
+- Fix for calling binder-next when in sidebar
+- Set pop-up-windows as buffer-local in binder-sidebar-mode
+- Fix binder-sidebar-find-file pop window with ARG
+
+* Version 0.2.0
+
+- Rewrite to use global dynamic variable binder-project-file
+- Replace status with tags
+
+    Instead of setting a single status per item, now you can set multple
+    tags. Items displayed in the sidebar can be filtered interactively with
+    binder-narrow-by-tag and binder-exclude-by-tag comamnds.
+
+- binder-get-tags now takes arg CURRENT
+
+    CURRENT will get structure accounting for binder-narrow-tags and
+    binder-exclude-tags
+
+- Improve aesthetics when tags overwrite item display name
+- Add tutorial project
+- Ensure binder-root returns directory or nil
+- Add binder-get-buffer-fileid for buffers
+- Add/rename binder-sidebar|notes-persistent-window options
+- Make binder-sidebar-select-window default nil
+- Change binder-staple-* -> binder-concat-*
+
+* Version 0.1.0
+
+First public release
