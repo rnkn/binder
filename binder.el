@@ -1022,6 +1022,9 @@ When ARG is non-nil, visit in new window."
   (interactive)
   (binder-sidebar-find-file t))
 
+;; FIXME: FEATURE - `binder-sidebar-search' to search for strings within
+;; project. Could be implemented simply as a dynamic command passed to `lgrep'.
+
 (defalias 'binder-sidebar-save #'binder-save)
 
 (defun binder-sidebar-get-index ()
