@@ -1272,7 +1272,6 @@ Calls `enlarge-window-horizontally' with `binder-sidebar-resize-window-step'."
     (?g (binder-sidebar-refresh t))
     (?? (describe-mode))))
 
-;;;###autoload
 (defun binder-reveal-in-sidebar ()
   "Reveal current file in binder sidebar."
   (interactive)
@@ -1342,7 +1341,6 @@ Unconditionally activates `binder-mode'."
     (define-key map (kbd "M-RET") #'binder-sidebar-new-file)
     map))
 
-;;;###autoload
 (define-derived-mode binder-sidebar-mode
   special-mode "Binder Sidebar"
   "Major mode for working with `binder' projects."
@@ -1531,7 +1529,6 @@ This command writes project data to disk."
     map)
   "Mode map for `binder-notes-mode'.")
 
-;;;###autoload
 (define-derived-mode binder-notes-mode
   text-mode "Binder Notes Mode"
   "Major mode for editing `binder' notes."
