@@ -288,7 +288,7 @@
 (defvar binder-format-version 2)
 (defvar binder-file-header
   (format "\
-;; -*- coding: utf-8; -*-
+;; -*- mode: lisp-data; coding: utf-8 -*-
 ;; Binder-Format-Version: %s
 ;; This is a Binder project file. It is meant to be human-readable, but you
 ;; probably shouldn't edit it.\n\n" binder-format-version)
