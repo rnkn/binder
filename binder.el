@@ -90,16 +90,12 @@
 ;; Each item in the sidebar displays the following information:
 
 ;;  1. x -- denotes that this item is included when concatenating the
-;;  project (see **Concatentate** below)
-
+;;     project (see **Concatentate** below)
 ;;  2. * -- denotes that this item has some notes (see **Notes** below),
-;;  or...
-
+;;     or...
 ;;  3. ? -- denotes that the item's corresponding file cannot be found
-
 ;;  4. name -- either the file relative to the project directory or an
-;;  arbitrary display name
-
+;;     arbitrary display name
 ;;  5. #tag1 #tag2 ... -- arbitrary item tags (see **Tags** below)
 
 ;; An item's display name can be changed with binder-sidebar-rename (r).
