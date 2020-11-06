@@ -81,20 +81,26 @@
 ;; -  binder-reveal-in-sidebar (C-c ;) finds the current file in the
 ;;    sidebar
 
-;; Each project items is a file reference relative to the project
-;; directory. Items are displayed as:
+;; Each project item is a file reference relative to the project directory.
 
-;;     x * name        #tag1 #tag2
+;; Project items are displayed in a linear ordered list. Calling
+;; binder-sidebar-find-file (RET) or binder-sidebar-find-file-other-window (o)
+;; will visit the corresponding file.
 
-;; These things mean:
+;; Each item in the sidebar displays the following information:
 
-;; | key  | description                                     |
-;; |------|-------------------------------------------------|
-;; | x    | item is included when concatenating the project |
-;; | *    | item has notes                                  |
-;; | ?    | the item's corresponding file cannot be found   |
-;; | name | the file name (or custom display name)          |
-;; | #tag | arbitrary item tags                             |
+;;  1. x -- denotes that this item is included when concatenating the
+;;  project (see **Concatentate** below)
+
+;;  2. * -- denotes that this item has some notes (see **Notes** below),
+;;  or...
+
+;;  3. ? -- denotes that the item's corresponding file cannot be found
+
+;;  4. name -- either the file relative to the project directory or an
+;;  arbitrary display name
+
+;;  5. #tag1 #tag2 ... -- arbitrary item tags (see **Tags** below)
 
 ;; An item's display name can be changed with binder-sidebar-rename (r).
 ;; If a file cannot be found, relocate with binder-sidebar-relocate (R).
