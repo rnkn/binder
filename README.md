@@ -62,7 +62,7 @@ will visit the corresponding file.
 Each item in the sidebar displays the following information:
 
  1. `x` -- denotes that this item is included when concatenating the
-    project (see **Concatentate** below)
+    project (see **Concatenating** below)
  2. `*` -- denotes that this item has some notes (see **Notes** below),
     or...
  3. `?` -- denotes that the item's corresponding file cannot be found
