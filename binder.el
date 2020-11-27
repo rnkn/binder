@@ -500,8 +500,8 @@ With optional argument FILTER, call `binder-filter' on data."
      ;; current project root.
      ((and (stringp binder-project-directory)
            (stringp root))
-      (when (y-or-n-p (format "Outside of current project %s\nSwitch project directory to %s? "
-                              binder-project-directory root))
+      (when (y-or-n-p (format "Change project directory to %s? "
+                              root))
         (binder-cd root)))
      ;; The project directory is set but we're not in a project; this is fine.
      ((stringp binder-project-directory)
