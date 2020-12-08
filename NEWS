@@ -1,5 +1,9 @@
 * current
 
+- Set project file to use lisp-data-mode
+- Revert change of sidebar selection face
+- Use a single-line prompt when switching project directory
+- Remove unnecessary autoloads
 - History is now tracked in a fancy NEWS file
 
 * Version 0.4.3
