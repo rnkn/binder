@@ -1267,12 +1267,15 @@ Calls `enlarge-window-horizontally' with `binder-sidebar-resize-window-step'."
   (enlarge-window-horizontally binder-sidebar-resize-window-step))
 
 (defun binder-sidebar-help (char)
-  "Interactively set project-specific properties by CHAR."
+  "Provide interactive help prompt by CHAR."
   (declare (interactive-only t))
   (interactive
    (list (read-char-choice "\
-? = describe-mode, g = refresh, | = clear filters, q = quit-window, C-g = cancel: "
-                           '(?? ?g ?| ?q))))
+? = describe-mode, \
+g = refresh, \
+| = clear filters, \
+q = quit-window, \
+C-g = cancel: " '(?? ?g ?| ?q))))
   (cl-case char
     (?q (quit-window))
     (?g (binder-sidebar-refresh))
