@@ -147,7 +147,7 @@ tag with `binder-sidebar-narrow-by-tag (/)` and/or only show items
 without a certain tag with `binder-sidebar-exclude-by-tag (\)`. Each of
 these commands can be called multiple times with additional tags.
 
-Reset the sidebar filters with `binder-sidebar-refresh (g)`.
+Clear the sidebar filters with `binder-sidebar-clear-filters (|)`.
 
 
 Marking

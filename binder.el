@@ -175,7 +175,7 @@
 ;; without a certain tag with binder-sidebar-exclude-by-tag (\). Each of
 ;; these commands can be called multiple times with additional tags.
 
-;; Reset the sidebar filters with binder-sidebar-refresh (g).
+;; Clear the sidebar filters with binder-sidebar-clear-filters (|).
 
 
 ;; Marking
@@ -876,11 +876,9 @@ Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
         (list :propertize (abbreviate-file-name binder-project-directory)
               'face 'bold)))
 
-(defun binder-sidebar-refresh (&optional clear-filter)
-  "Redraw binder sidebar, reading from cache.
-When called interactively (or with optional CLEAR-FILTER) clear
-filter by tags."
-  (interactive "p")
+(defun binder-sidebar-refresh ()
+  "Redraw binder sidebar, reading from cache."
+  (interactive)
   (with-silent-modifications
     (setq default-directory binder-project-directory)
     ;;
@@ -891,8 +889,6 @@ filter by tags."
     ;;
     ;; (hack-local-variables)
     (binder-sidebar-format-header-line)
-    (when clear-filter (setq binder-narrow-tags nil
-                             binder-exclude-tags nil))
     (let ((x (point)))
       (erase-buffer)
       (mapc
@@ -1239,6 +1235,14 @@ To reset filtering call `binder-sidebar-refresh' (\\[binder-sidebar-refresh])."
     (push tag binder-exclude-tags)
     (binder-sidebar-refresh)))
 
+(defun binder-sidebar-clear-filters ()
+  "Clear all sidebar tag filters."
+  (interactive)
+  (setq binder-narrow-tags nil
+        binder-exclude-tags nil)
+  (binder-sidebar-refresh)
+  (message "Sidebar filters cleared"))
+
 (defun binder-highlight-in-sidebar ()
   "Highlight the current file in sidebar.
 
@@ -1267,11 +1271,12 @@ Calls `enlarge-window-horizontally' with `binder-sidebar-resize-window-step'."
   (declare (interactive-only t))
   (interactive
    (list (read-char-choice "\
-? = describe-mode, g = refresh (clear filters), q = quit-window, C-g = cancel: "
-                           '(?? ?g ?q))))
+? = describe-mode, g = refresh, | = clear filters, q = quit-window, C-g = cancel: "
+                           '(?? ?g ?| ?q))))
   (cl-case char
     (?q (quit-window))
-    (?g (binder-sidebar-refresh t))
+    (?g (binder-sidebar-refresh))
+    (?| (binder-sidebar-clear-filters))
     (?? (describe-mode))))
 
 (defun binder-reveal-in-sidebar ()
@@ -1308,6 +1313,7 @@ Unconditionally activates `binder-mode'."
     (define-key map (kbd "{") #'binder-sidebar-shrink-window)
     (define-key map (kbd "}") #'binder-sidebar-enlarge-window)
     (define-key map (kbd "g") #'binder-sidebar-refresh)
+    (define-key map (kbd "|") #'binder-sidebar-clear-filters)
     (define-key map (kbd "j") #'binder-sidebar-jump-to-current)
     (define-key map (kbd "C") #'binder-sidebar-change-directory)
     (define-key map (kbd "n") #'next-line)

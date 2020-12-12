@@ -164,8 +164,7 @@ project files you want to work with in the sidebar.
 When the sidebar items are filtered, navigating backward/forward only
 considers those items.
 
-Type g to clear the tag filters and refresh the sidebar, then C-c ] to
-go to the next file.")
+Type | to clear the sidebar filters, then C-c ] to go to the next file.")
    (cons "concat.txt" "\
 Notice that the tutorial items for navigating, sidebar and marking are
 marked with an x? These items are included when you concatenate the
