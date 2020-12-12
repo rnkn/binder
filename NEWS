@@ -1,5 +1,7 @@
 * current
 
+- Add binder-sidebar-clear-filters (|) and remove clear-filters arg from
+  binder-sidebar-refresh
 - Set project file to use lisp-data-mode
 - Revert change of sidebar selection face
 - Use a single-line prompt when switching project directory
