@@ -870,12 +870,6 @@ Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
 (defvar binder--current-fileid nil)
 (defvar binder--sidebar-marked nil)
 
-(defun binder-sidebar-format-header-line ()
-  "Format an appropriate window header-line for sidebar."
-  (setq header-line-format
-        (list :propertize (abbreviate-file-name binder-project-directory)
-              'face 'bold)))
-
 (defun binder-sidebar-refresh ()
   "Redraw binder sidebar, reading from cache."
   (interactive)
@@ -888,7 +882,9 @@ Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
     ;; `binder-default-file-extension'.
     ;;
     ;; (hack-local-variables)
-    (binder-sidebar-format-header-line)
+    (setq header-line-format
+          (list :propertize (abbreviate-file-name binder-project-directory)
+                'face 'bold))
     (let ((x (point)))
       (erase-buffer)
       (mapc
