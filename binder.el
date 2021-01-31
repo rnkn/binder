@@ -1,12 +1,12 @@
 ;;; binder.el --- Global minor mode to facilitate multi-file writing projects  -*- lexical-binding: t; -*-
 
-;; Copyright (c) 2020  Paul W. Rankin
+;; Copyright (c) 2020-2021  Paul W. Rankin
 
-;; Author: Paul W. Rankin <pwr@skeletons.cc>
+;; Author: Paul W. Rankin <pwr@bydasein.com>
 ;; Keywords: files, outlines, wp, text
-;; Version: 0.4.3
+;; Version: 0.4.4
 ;; Package-Requires: ((emacs "24.4") (seq "2.20"))
-;; URL: https://git.skeletons.cc/binder
+;; URL: https://github.com/rnkn/binder
 
 ;; This file is not part of GNU Emacs.
 
@@ -212,7 +212,7 @@
 ;; ------------
 
 ;; -  Emacs 24.4
-;; -  seq 2.20 (part of Emacs 25.1+)
+;; -  seq 2.20 (part of Emacs 25 and later)
 
 
 ;; Installation
