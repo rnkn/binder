@@ -7,6 +7,7 @@
 - Use a single-line prompt when switching project directory
 - Remove unnecessary autoloads
 - History is now tracked in a fancy NEWS file
+- Update email, URL
 
 * Version 0.4.3
 
