@@ -1,4 +1,4 @@
-* current
+* Version 0.4.4
 
 - Add binder-sidebar-clear-filters (|) and remove clear-filters arg from
   binder-sidebar-refresh
