@@ -1101,7 +1101,10 @@ When ARG is non-nil, do not prompt for confirmation."
 
 (defun binder-sidebar-relocate (filepath)
   "Change file path of project item at point to FILEPATH."
-  (interactive "fNew file path: ")
+  (interactive
+   (list (read-file-name
+          (format "New file path [%s]: " (binder-sidebar-get-fileid))
+          nil nil t)))
   (setq filepath (binder-file-relative-to-root filepath))
   (setcar (binder-get-item (binder-sidebar-get-fileid)) filepath)
   (binder-write-maybe)
