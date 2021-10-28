@@ -1110,25 +1110,6 @@ When ARG is non-nil, do not prompt for confirmation."
   (binder-write-maybe)
   (binder-sidebar-refresh))
 
-(defun binder-sidebar-toggle-include ()
-  "Toggle whether marked items or item at point is included in `binder-sidebar-concat'."
-  (interactive)
-  (dolist (fileid (or binder--sidebar-marked
-                      (list (binder-sidebar-get-fileid))))
-    (binder-set-item-prop fileid 'include
-                          (not (binder-get-item-prop fileid 'include))))
-  (setq binder--sidebar-marked nil)
-  (binder-write-maybe)
-  (binder-sidebar-refresh))
-
-(defun binder-sidebar-clear-include ()
-  "Make no items included in `binder-sidebar-concat'."
-  (interactive)
-  (dolist (item (binder-read t))
-    (binder-set-item-prop (car item) 'include nil))
-  (binder-write-maybe)
-  (binder-sidebar-refresh))
-
 (defun binder-sidebar-add-tag (tag)
   "Add TAG to marked items or item at point."
   (interactive
@@ -1330,8 +1311,6 @@ Unconditionally activates `binder-mode'."
     (define-key map (kbd "T") #'binder-sidebar-remove-tag)
     (define-key map (kbd "#") #'binder-sidebar-toggle-tags)
     (define-key map (kbd "U") #'binder-sidebar-unmark-all)
-    (define-key map (kbd "c") #'binder-sidebar-concat)
-    (define-key map (kbd "v") #'binder-sidebar-concat)
     (define-key map (kbd "i") #'binder-sidebar-toggle-notes)
     (define-key map (kbd "z") #'binder-sidebar-open-notes)
     (define-key map (kbd "M-n") #'binder-sidebar-shift-down)
@@ -1344,8 +1323,6 @@ Unconditionally activates `binder-mode'."
     (define-key map (kbd "r") #'binder-sidebar-rename)
     (define-key map (kbd "R") #'binder-sidebar-relocate)
     (define-key map (kbd "E") #'binder-sidebar-toggle-file-extensions)
-    (define-key map (kbd "x") #'binder-sidebar-toggle-include)
-    (define-key map (kbd "X") #'binder-sidebar-clear-include)
     (define-key map (kbd "/") #'binder-sidebar-narrow-by-tag)
     (define-key map (kbd "\\") #'binder-sidebar-exclude-by-tag)
     (define-key map (kbd "M-RET") #'binder-sidebar-new-file)
@@ -1544,102 +1521,6 @@ This command writes project data to disk."
   "Major mode for editing `binder' notes."
   (face-remap-add-relative 'default 'binder-notes)
   (binder-notes-refresh))
-
-
-;;; Concat Mode
-
-(defgroup binder-concat ()
-  "Options for `binder-concat-mode'."
-  :group 'binder)
-
-(defcustom binder-default-concat-mode
-  'text-mode
-  "Default major mode when concatenating files."
-  :type 'function
-  :safe 'functionp
-  :group 'binder-concat)
-
-(defcustom binder-concat-separator "\n"
-  "String to insert between concatenated project files."
-  :type 'string
-  :group 'binder-concat)
-
-(defcustom binder-concat-buffer
-  "*Binder Concat View*"
-  "Buffer name for viewing a concatenated project."
-  :type 'string
-  :safe 'stringp
-  :group 'binder-concat)
-
-(defun binder-concat ()
-  "Concatenate all project files marked as included.
-Creates `binder-concat-buffer' with each file separated by
-`binder-concat-separator' and sets the major mode to
-`binder-default-concat-mode'.
-
-See `binder-sidebar-toggle-include'."
-  (interactive)
-  (binder-ensure-in-project)
-  (let ((item-list
-         (seq-filter
-          (lambda (item) (cdr (assq 'include item)))
-          (binder-read t)))
-        (concat-mode binder-default-concat-mode))
-    (with-current-buffer (get-buffer-create binder-concat-buffer)
-      (with-silent-modifications
-        (erase-buffer)
-        (dolist (item item-list)
-          (let ((x (point)))
-            (insert-file-contents
-             (expand-file-name (car item) binder-project-directory))
-            (goto-char (point-max))
-            (insert binder-concat-separator)
-            (put-text-property x (point) 'binder-original-file
-                               (expand-file-name (car item) binder-project-directory)))))
-      (funcall concat-mode)
-      (binder-concat-mode t))
-    (if (eq major-mode 'binder-sidebar-mode)
-        (let ((pop-up-windows binder-sidebar-pop-up-windows))
-          (pop-to-buffer binder-concat-buffer))
-      (pop-to-buffer binder-concat-buffer))))
-
-(defalias 'binder-sidebar-concat #'binder-concat)
-
-(defun binder-concat-find-original ()
-  "Find the file containing content at point."
-  (interactive)
-  (unless binder-concat-mode
-    (user-error "Not in %S" 'binder-concat-mode))
-  (let ((original-file (or (get-text-property (point) 'binder-original-file)
-                           (get-text-property (1- (point)) 'binder-original-file))))
-        ;; (position
-        ;;  (cond ((bobp) 1)
-        ;;        ((eobp)
-        ;;         (previous-single-property-change
-        ;;          (point) 'binder-original-file))
-        ;;        ((string= (get-text-property (point) 'binder-original-file)
-        ;;                  (get-text-property (1- (point)) 'binder-original-file))
-        ;;         (or (previous-single-property-change
-        ;;              (point) 'binder-original-file)
-        ;;             1))
-        ;;        (t (point))))
-    ;; (setq position (1+ (- (point) position)))
-    (find-file-existing original-file)))
-
-(defcustom binder-concat-mode-on-hook
-  '(view-mode)
-  "Hook run after entering `binder-concat-mode'."
-  :type 'hook
-  :group 'binder-concat)
-
-(defvar binder-concat-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c RET") #'binder-concat-find-original)
-    map))
-
-(define-minor-mode binder-concat-mode
-  "Minor mode for viewing concatenated project files."
-  :init-value nil)
 
 
 
