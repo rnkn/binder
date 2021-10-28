@@ -843,7 +843,7 @@ See `display-buffer-in-side-window' for example options."
 
 (defcustom binder-sidebar-select-window
   nil
-  "If non-nil, switch to binder sidebar upon displaying it."
+  "If non-nil, switch to sidebar upon displaying it."
   :type 'boolean
   :safe 'booleanp
   :group 'binder-sidebar)
@@ -1012,7 +1012,7 @@ When ARG is non-nil, visit in new window."
       (find-file filepath))))
 
 (defun binder-sidebar-find-file-other-window ()
-  "Visit project item at point in other window."
+  "Visit project file at point in other window."
   (interactive)
   (binder-sidebar-find-file t))
 
