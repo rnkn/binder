@@ -50,12 +50,8 @@
 ;; Data concerning these files is saved in a .binder.el file in the
 ;; project directory.
 
-;; A project can be thought of an ordered list of files with the following
-;; associated data:
-
-;; -  item notes (see **Notes** below)
-;; -  item tags (see **Tags** below)
-;; -  item include state (see **Concatenating** below)
+;; A project can be thought of an ordered list of files with associated
+;; notes and tags.
 
 
 ;; Navigation
@@ -64,8 +60,8 @@
 ;; At the most basic level, you can navigate back and forth through the
 ;; files in a project:
 
-;; -  binder-next (C-c ]) visits the next file in the project
-;; -  binder-previous (C-c [) visits the previous
+;;  - binder-next (C-c ]) visits the next file in the project
+;;  - binder-previous (C-c [) visits the previous
 
 ;; Calling these commands activates a transient map so that each command
 ;; can be repeated without the prefix key.
@@ -76,9 +72,9 @@
 
 ;; You'll mostly interact with the project structure via the sidebar.
 
-;; -  binder-toggle-sidebar (C-c ') toggles the visibility of the binder
+;;  - binder-toggle-sidebar (C-c ') toggles the visibility of the binder
 ;;    sidebar
-;; -  binder-reveal-in-sidebar (C-c ;) finds the current file in the
+;;  - binder-reveal-in-sidebar (C-c ;) finds the current file in the
 ;;    sidebar
 
 ;; Each project item is a file reference relative to the project directory.
@@ -89,14 +85,12 @@
 
 ;; Each item in the sidebar displays the following information:
 
-;;  1. x -- denotes that this item is included when concatenating the
-;;     project (see **Concatenating** below)
-;;  2. * -- denotes that this item has some notes (see **Notes** below),
+;;  1. * denotes that this item has some notes (see **Notes** below),
 ;;     or...
-;;  3. ? -- denotes that the item's corresponding file cannot be found
-;;  4. name -- either the file relative to the project directory or an
-;;     arbitrary display name
-;;  5. #tag1 #tag2 ... -- arbitrary item tags (see **Tags** below)
+;;  2. ? denotes that the item's corresponding file cannot be found
+;;  3. either the file relative to the project directory, or an arbitrary
+;;     display name
+;;  4. #tag1 #tag2 ... arbitrary item tags (see **Tags** below)
 
 ;; An item's display name can be changed with binder-sidebar-rename (r).
 ;; If a file cannot be found, relocate with binder-sidebar-relocate (R).
@@ -112,8 +106,8 @@
 ;; after the current file's index. If no file-name extension is provided,
 ;; use binder-default-file-extension.
 
-;; >  Hint: you can use an alternate default file extension for different
-;; >  projects by setting a directory local variable.
+;;  > Hint: you can use an alternate default file extension for different
+;;  > projects by setting a directory local variable.
 
 ;; Files can also be added to a project from outside the sidebar with
 ;; binder-add-file (C-c :).
@@ -188,31 +182,11 @@
 ;; To unmark all sidebar items, call binder-sidebar-unmark-all (U).
 
 
-;; Concatenating
-;; -------------
-
-;; A writing project in discrete pieces probably has an end goal of being
-;; put together. Each project item has a property of being "included" or
-;; not. In the sidebar, an item's include state is toggled with
-;; binder-sidebar-toggle-include (x).
-
-;; When calling binder-sidebar-concat (c | v), project items marked as
-;; included will be concatenated in a new buffer. The default mode of this
-;; buffer is set by binder-default-concat-mode.
-
-;; >  Hint: you can use an alternate default mode for different projects by
-;; >  setting a directory local variable.
-
-;; When in the *Binder Concat View* buffer, calling
-;; binder-concat-find-original (C-c RET) will visit the original file
-;; corresponding to the text at point.
-
-
 ;; Requirements
 ;; ------------
 
-;; -  Emacs 24.4
-;; -  seq 2.20 (part of Emacs 25 and later)
+;;  - Emacs 24.4
+;;  - seq 2.20 (part of Emacs 25 and later)
 
 
 ;; Installation
