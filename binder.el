@@ -886,16 +886,7 @@ Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
   (interactive)
   (with-silent-modifications
     (setq default-directory binder-project-directory)
-    ;;
-    ;; FIXME: This can cause a segfault. An endless loop is triggered if the
-    ;; user does not accept the local variables as safe. Disabling this means
-    ;; the user is unable to set `binder-default-concat-mode' or
-    ;; `binder-default-file-extension'.
-    ;;
-    ;; (hack-local-variables)
-    (setq header-line-format
-          (list :propertize (abbreviate-file-name binder-project-directory)
-                'face 'bold))
+    (setq header-line-format (abbreviate-file-name binder-project-directory))
     (let ((x (point)))
       (erase-buffer)
       (mapc
