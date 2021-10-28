@@ -405,7 +405,7 @@ any time with `binder-change-directory'."
             (pp-to-string nil))
     (write-file (expand-file-name binder-default-file binder-project-directory))))
 
-(defun binder-find-project-file ()
+(defun binder-locate-project-file ()
   "Find or initialize current project file."
   (let ((binder-file
          (expand-file-name binder-default-file binder-project-directory)))
@@ -414,7 +414,7 @@ any time with `binder-change-directory'."
 
 (defun binder-write ()
   "Write project data to file."
-  (let ((binder-file (binder-find-project-file)))
+  (let ((binder-file (binder-locate-project-file)))
     (with-temp-buffer
       (insert binder-file-header
               (pp-to-string binder--cache))
@@ -454,7 +454,7 @@ Included `binder-narrow-tags' and excluded `binder-exclude-tags'."
   "Read current project data.
 Reads from `binder--cache' if valid, or from project file if not.
 With optional argument FILTER, call `binder-filter' on data."
-  (let ((binder-file (binder-find-project-file))
+  (let ((binder-file (binder-locate-project-file))
         version)
     (when binder--cache
       (cond
