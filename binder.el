@@ -1207,6 +1207,13 @@ To reset filtering call `binder-sidebar-refresh' (\\[binder-sidebar-refresh])."
   (binder-sidebar-refresh)
   (message "Sidebar filters cleared"))
 
+(defun binder-sidebar-copy-filepath ()
+  "Put the current item filepath into the kill ring."
+  (interactive)
+  (let ((fileid (binder-sidebar-get-fileid)))
+    (kill-new fileid)
+    (message "%S" fileid)))
+
 (defun binder-highlight-in-sidebar ()
   "Highlight the current file in sidebar.
 
@@ -1299,6 +1306,7 @@ Unconditionally activates `binder-mode'."
     (define-key map (kbd "U") #'binder-sidebar-unmark-all)
     (define-key map (kbd "i") #'binder-sidebar-toggle-notes)
     (define-key map (kbd "z") #'binder-sidebar-open-notes)
+    (define-key map (kbd "c") #'binder-sidebar-copy-filepath)
     (define-key map (kbd "M-n") #'binder-sidebar-shift-down)
     (define-key map (kbd "<M-down>") #'binder-sidebar-shift-down)
     (define-key map (kbd "M-p") #'binder-sidebar-shift-up)
