@@ -273,6 +273,10 @@
 (defvar binder--cache nil)
 (defvar binder--modification-time nil)
 (defvar binder--modification-count 0)
+(defvar binder--current-fileid nil)
+(defvar binder--sidebar-marked nil)
+(defvar binder--notes-fileid nil)
+(defvar binder--notes-display nil)
 (defvar binder-narrow-tags nil)
 (defvar binder-exclude-tags nil)
 (defvar binder-status-filter-in nil)
@@ -852,9 +856,6 @@ Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
   :safe 'integerp
   :group 'binder-sidebar)
 
-(defvar binder--current-fileid nil)
-(defvar binder--sidebar-marked nil)
-
 (defun binder-sidebar-refresh ()
   "Redraw binder sidebar, reading from cache."
   (interactive)
@@ -1378,9 +1379,6 @@ automatically saved."
   "Hook run after entering Binder Notes Mode."
   :type 'hook
   :options '(visual-line-mode))
-
-(defvar binder--notes-fileid nil)
-(defvar binder--notes-display nil)
 
 (defun binder-notes-refresh ()
   "Redraw the notes buffer."
