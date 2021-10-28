@@ -35,29 +35,19 @@
 ((\"projects.txt\"
   (tags \"start-here\"))
  (\"sidebar.txt\"
-  (include . t)
   (tags \"foo\" \"bar\"))
- (\"navigation.txt\"
-  (include . t))
- (\"marks.txt\"
-  (include . t))
+ (\"navigation.txt\")
+ (\"marks.txt\")
  (\"notes.txt\"
   (notes . \"Some notes about notes.\n\nNullam eu ante vel est convallis dignissim. Fusce suscipit, wisi nec facilisis facilisis, est dui fermentum leo, quis tempor ligula erat quis odio. Nunc porta vulputate tellus. Nunc rutrum turpis sed pede. Sed bibendum. Aliquam posuere. Nunc aliquet, augue nec adipiscing interdum, lacus tellus malesuada massa, quis varius mi purus non odio.\"))
  (\"tags.txt\"
   (tags \"foo\"))
- (\"concat.txt\"
-  (include . t)
-  (tags \"bar\"))
- (\"concat-2.txt\"
-  (display . \"concat-including\"))
- (\"concat-3.txt\"
-  (display . \"concat-editing\"))
  (\"errors.txt\"))"))
    (cons "projects.txt" "\
 A project in Binder is a linear list of files in with associated
-information (i.e. their order, inclusion state, notes, tags). This
-information is stored in a .binder.el file in the top-level directory of
-the project.
+information (i.e. their order, notes, and tags). This information
+is stored in a .binder.el file in the top-level directory of the
+project.
 
 You can only work on one project at a time in one Emacs session.
 
@@ -81,11 +71,10 @@ go to sidebar.txt.")
    (cons "sidebar.txt" "\
 By default items in the sidebar will show:
 
-    x * name        #tag1 #tag2
+    * name        #tag1 #tag2
 
 These things mean:
 
-    x       the item is included when concatenating the project
     *       the item has project notes
     name    either the item file name, or a custom item display name
     #tag    arbitrary item tag/s
@@ -165,37 +154,6 @@ When the sidebar items are filtered, navigating backward/forward only
 considers those items.
 
 Type | to clear the sidebar filters, then C-c ] to go to the next file.")
-   (cons "concat.txt" "\
-Notice that the tutorial items for navigating, sidebar and marking are
-marked with an x? These items are included when you concatenate the
-project.
-
-In the sidebar, type c (or v) to open the concat view. Congratulations,
-you've just concatenated some writing!
-
-Type q to quit the concat view and C-c ] to go to the next file.")
-   (cons "concat-2.txt" "\
-By default, concatenating a project enables view-mode, because you're
-not actually looking at the original files.
-
-In the sidebar, you can toggle which items are included when
-concatenating a project by typing x. Clear all inclusions with X.
-
-Now, include the following items:
-
-    concat
-    concat-including
-    concat-editing
-
-Now type c again.")
-   (cons "concat-3.txt" "\
-==> Move the cursor here and type C-c RET. <==
-
-This is how you go from viewing a concatenated project as a whole back
-to the original file for editing. The concat view is good for
-proofreading and creating a final export, but not editing.
-
-Type C-c ] to go to the next file.")
    (cons "errors.txt" "\
 Binder caches project information to avoid contious reading and writing
 to disk. However this means errors may occur if a project is moved on
