@@ -287,7 +287,7 @@
 
 ;;; Core Variables ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defvar binder-format-version 2)
+(defvar binder-format-version 3)
 (defvar binder-file-header
   (format "\
 ;; -*- mode: lisp-data; coding: utf-8 -*-
@@ -446,9 +446,18 @@ Included `binder-narrow-tags' and excluded `binder-exclude-tags'."
 (defun binder-upgrade (data version)
   "Upgrade project DATA in VERSION to `binder-format-version'."
   (cond ((not (stringp version))
-         (cdr (assq 'structure data)))
-        ((= (string-to-number version) binder-format-version)
-         data)))
+         (binder-upgrade (cdr (assq 'structure data)) "2"))
+        ((= (string-to-number version) 2)
+         (mapcar
+          (lambda (item)
+            (when (cdr (assq 'include item))
+              (let ((tags (assq 'tags item)))
+                (if tags
+                    (cl-pushnew "include" (cdr tags))
+                  (push (list 'tags "include") (cdr item)))))
+            (assq-delete-all 'include item))
+          data))
+        (t data)))
 
 (defun binder-read (&optional filter)
   "Read current project data.
