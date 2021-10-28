@@ -892,37 +892,34 @@ Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
       (mapc
        (lambda (item)
          (let ((fileid   (car item))
-               (include  (cdr (assq 'include item)))
                (display  (cdr (assq 'display item)))
                (notes    (cdr (assq 'notes item)))
                (tags     (cdr (assq 'tags item)))
                marked missing tags-overwrite)
            ;; Set whether FILEID is MARKED and MISSING.
-           (when (member fileid binder--sidebar-marked)
-             (setq marked t))
-           (when (not (file-exists-p fileid))
-             (setq missing t))
+           (when (member fileid binder--sidebar-marked) (setq marked t))
+           (when (not (file-exists-p fileid))           (setq missing t))
           ;; Insert the item line elements.
-          (insert (cond (marked ">")
-                        (include binder-sidebar-include-char)
-                        (t " "))
-                  " "
+          (insert (if marked ">" " ")
                   (cond (missing binder-sidebar-missing-char)
                         ((and notes (not (string-empty-p notes)))
                          binder-sidebar-notes-char)
                         (t " "))
-                  " "
-                  ;; Use either DISPLAY, or if directory ensure a
-                  ;; trailing slash, and finally if we're hiding file
-                  ;; extensions, do that, otherwise just the FILEID is
-                  ;; fine.
-                  (or display
-                      (if (file-directory-p fileid)
-                          (replace-regexp-in-string "/*$" "/" fileid)
-                        (if binder-sidebar-hide-file-extensions
-                            (replace-regexp-in-string ".+\\(\\..+\\)" ""
-                                                      fileid nil nil 1)
-                          fileid))))
+                  " ")
+          ;; Use either DISPLAY, or if directory ensure a trailing slash, and
+          ;; finally if we're hiding file extensions, do that, otherwise just
+          ;; the FILEID is fine.
+          (insert-text-button
+           (or display (if (file-directory-p fileid)
+                           (replace-regexp-in-string "/*$" "/" fileid)
+                         (if binder-sidebar-hide-file-extensions
+                             (replace-regexp-in-string ".+\\(\\..+\\)" ""
+                                                       fileid nil nil 1)
+                           fileid)))
+           'binder-fileid fileid
+           'action #'binder-sidebar-button-action
+           'help-echo "mouse-1, RET: visit this file"
+           'follow-link t)
           ;; Add the face properties. Make them front-sticky since we
           ;; were previously editing the buffer text (but not anymore).
           (put-text-property (line-beginning-position) (line-end-position)
@@ -956,6 +953,23 @@ Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
                                'face 'binder-sidebar-highlight))))
        (binder-read t))
       (goto-char x))))
+
+(defun binder-sidebar-button-ensure ()
+  "Ensure point is at button."
+  (or (button-at (point))
+      (and (eolp) (forward-button -1 nil nil t))
+      (forward-button 1 nil nil t)))
+
+(defun binder-sidebar-button-action (button &optional pop-up-window)
+  (interactive)
+  (let ((pop-up-windows (or pop-up-window binder-sidebar-pop-up-windows))
+        (fileid (button-get button 'binder-fileid))
+        filepath)
+    (setq filepath (expand-file-name fileid))
+    (when (file-exists-p filepath)
+      (setq binder--current-fileid fileid)
+      (binder-sidebar-refresh)
+      (find-file filepath))))
 
 (defun binder-sidebar-refresh-window ()
   "Call `binder-sidebar-refresh' if sidebar window is live."
@@ -1004,14 +1018,8 @@ Defaults to current directory."
   "Visit project file at point.
 When ARG is non-nil, visit in new window."
   (interactive "P")
-  (let ((pop-up-windows (or arg binder-sidebar-pop-up-windows))
-        (fileid (binder-sidebar-get-fileid))
-        filepath)
-    (setq filepath (expand-file-name fileid))
-    (when (file-exists-p filepath)
-      (setq binder--current-fileid fileid)
-      (binder-sidebar-refresh)
-      (find-file filepath))))
+  (when (binder-sidebar-button-ensure)
+    (binder-sidebar-button-action (button-at (point)) arg)))
 
 (defun binder-sidebar-find-file-other-window ()
   "Visit project file at point in other window."
@@ -1295,6 +1303,8 @@ Unconditionally activates `binder-mode'."
 (defvar binder-sidebar-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "?") #'binder-sidebar-help)
+    (define-key map (kbd "TAB") #'forward-button)
+    (define-key map (kbd "<backtab>") #'backward-button)
     (define-key map (kbd "{") #'binder-sidebar-shrink-window)
     (define-key map (kbd "}") #'binder-sidebar-enlarge-window)
     (define-key map (kbd "g") #'binder-sidebar-refresh)
