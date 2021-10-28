@@ -285,7 +285,7 @@
   :group 'files)
 
 
-;;; Core Variables
+;;; Core Variables ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defvar binder-format-version 2)
 (defvar binder-file-header
@@ -305,7 +305,7 @@
 (defvar binder-status-filter-out nil)
 
 
-;;; Options
+;;; Options ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defcustom binder-mode-lighter
   " B/"
@@ -346,7 +346,7 @@ any time with `binder-change-directory'."
   :group 'binder)
 
 
-;;; Faces
+;;; Faces ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defgroup binder-sidebar-faces ()
   "Default faces for `binder-sidebar-mode'."
@@ -373,7 +373,7 @@ any time with `binder-change-directory'."
   :group 'binder-sidebar-faces)
 
 
-;;; Core Non-interactive Functions
+;;; Core Non-interactive Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun binder-root ()
   "Return the root directory with a project file, or nil."
@@ -603,7 +603,7 @@ Optionally pass FILTER to `binder-read'."
     (t (binder-file-relative-to-root (buffer-file-name)))))
 
 
-;;; Global Minor Mode
+;;; Global Minor Mode ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun binder-init-project (directory)
   "Initialize empty project in DIRECTORY."
@@ -756,7 +756,7 @@ one, otherwise insert at end."
     (setq binder--cache nil)))
 
 
-;;; Sidebar Major Mode
+;;; Sidebar Major Mode ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defgroup binder-sidebar ()
   "Options for `binder-sidebar-mode'."
@@ -1355,7 +1355,7 @@ Unconditionally activates `binder-mode'."
   (add-hook 'post-command-hook #'binder-sidebar-sync-notes t t))
 
 
-;;; Notes Major Mode
+;;; Notes Major Mode ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defface binder-notes
   '((t nil))
