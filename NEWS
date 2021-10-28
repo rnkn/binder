@@ -1,3 +1,14 @@
+* current
+
+- Use buttons in sidebar, allowing mouse interaction
+- Remove "include" and "concat" feature, this is better served with tags
+  and other tools
+- Change Binder-Format-Version to 3, providing automatic upgrade to
+  convert "(include . t)" properties to #include tags
+- Add binder-sidebar-copy-filepath command on c key
+- Do not force bold header-line-format
+- Print existing filepath when calling binder-sidebar-relocate
+
 * Version 0.4.4
 
 - Add binder-sidebar-clear-filters (|) and remove clear-filters arg from
