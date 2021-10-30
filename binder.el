@@ -469,9 +469,7 @@ With optional argument FILTER, call `binder-filter' on data."
         (setq version (lm-header "binder-format-version"))
         (goto-char (point-min))
         (setq binder--cache
-              (if (= (string-to-number version) binder-format-version)
-                  (read (current-buffer))
-                (binder-upgrade (read (current-buffer)) version))))
+              (binder-upgrade (read (current-buffer)) version)))
       (binder-set-unmodified)))
   ;; Finally, return the cache.
   (if filter (binder-filter binder--cache) binder--cache))
