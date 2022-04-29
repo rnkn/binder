@@ -8,6 +8,10 @@
 - Add binder-sidebar-copy-filepath command on c key
 - Do not force bold header-line-format
 - Print existing filepath when calling binder-sidebar-relocate
+- Ensure indent-tabs-mode is nil in sidebar, preventing misalignment of
+  tags
+- Append faces in sidebar to allow multiple faces, e.g. button +
+  binder-sidebar-highlight
 
 * Version 0.4.4
 
