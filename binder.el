@@ -890,6 +890,7 @@ Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
                                                        fileid nil nil 1)
                            fileid)))
            'binder-fileid fileid
+           'face 'button
            'action #'binder-sidebar-button-action
            'help-echo "mouse-1, RET: visit this file"
            'follow-link t)
@@ -900,11 +901,11 @@ Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
           (put-text-property (line-beginning-position) (line-end-position)
                              'front-sticky '(binder-fileid))
           (when missing
-            (put-text-property (line-beginning-position) (line-end-position)
-                               'face 'binder-sidebar-missing))
+            (add-face-text-property (line-beginning-position) (line-end-position)
+                                    'binder-sidebar-missing))
           (when marked
-            (put-text-property (line-beginning-position) (line-end-position)
-                               'face 'binder-sidebar-marked))
+            (add-face-text-property (line-beginning-position) (line-end-position)
+                                    'binder-sidebar-marked))
           ;; Add the item TAGS with a hashtag, because hashtags are cool, right?
           (when (and (not binder-sidebar-hide-tags) tags)
             (move-to-column (1- binder-sidebar-tags-column))
@@ -917,13 +918,13 @@ Used by `binder-sidebar-shrink-window' and `binder-sidebar-enlarge-window'."
               (insert (if tags-overwrite "~" " ")
                       tags-char
                       (string-join tags (concat " " tags-char)))
-              (put-text-property tags-col (line-end-position)
-                                 'face 'binder-sidebar-tags)))
+              (add-face-text-property tags-col (line-end-position)
+                                      'binder-sidebar-tags)))
           (insert "\n")
           (when (string= fileid binder--current-fileid)
-            (put-text-property (line-beginning-position 0)
-                               (line-beginning-position)
-                               'face 'binder-sidebar-highlight))))
+            (add-face-text-property (line-beginning-position 0)
+                                    (line-beginning-position)
+                                    'binder-sidebar-highlight))))
        (binder-read t))
       (goto-char x))))
 
