@@ -1324,6 +1324,7 @@ Unconditionally activates `binder-mode'."
 (define-derived-mode binder-sidebar-mode
   special-mode "Binder Sidebar"
   "Major mode for working with `binder' projects."
+  (setq indent-tabs-mode nil)
   (face-remap-add-relative 'default 'binder-sidebar)
   (add-hook 'post-command-hook #'binder-sidebar-sync-notes t t))
 
