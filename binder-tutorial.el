@@ -44,7 +44,7 @@
   (tags \"foo\"))
  (\"errors.txt\"))"))
    (cons "projects.txt" "\
-A project in Binder is a linear list of files in with associated
+A project in Binder is a linear list of files with associated
 information (i.e. their order, notes, and tags). This information
 is stored in a .binder.el file in the top-level directory of the
 project.
