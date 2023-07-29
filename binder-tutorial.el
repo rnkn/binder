@@ -1,8 +1,8 @@
 ;;; binder-tutorial.el --- Tutorial for Binder projects  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2020  Paul W. Rankin
+;; Copyright (c) 2020-2023 Paul W. Rankin
 
-;; Author: Paul W. Rankin <pwr@skeletons.cc>
+;; Author: Paul W. Rankin <hello@paulwrankin.com>
 ;; Keywords: help, wp, convenience
 
 ;; This program is free software; you can redistribute it and/or modify

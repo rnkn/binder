@@ -1,6 +1,6 @@
 ;;; binder.el --- Global minor mode to facilitate multi-file writing projects  -*- lexical-binding: t; -*-
 
-;; Copyright (c) 2020-2021  Paul W. Rankin
+;; Copyright (c) 2020-2023 Paul W. Rankin
 
 ;; Author: Paul W. Rankin <pwr@bydasein.com>
 ;; Keywords: files, outlines, wp, text
