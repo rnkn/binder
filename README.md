@@ -1,4 +1,4 @@
-## Binder is looking for a new maintainer. Please get in touch if interested.
+## Binder has moved to https://codeberg.org/divyaranjan/binder/
 
 Binder
 ======

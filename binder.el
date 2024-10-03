@@ -1,12 +1,14 @@
 ;;; binder.el --- Global minor mode to facilitate multi-file writing projects  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2020-2024  Paul W. Rankin
+;;               2024       Divya Ranjan
 
+;; Maintainer: Divya Ranjan <divya@subvertising.org>
 ;; Author: Paul W. Rankin <rnkn@rnkn.xyz>
 ;; Keywords: files, outlines, wp, text
 ;; Version: 0.5.0
 ;; Package-Requires: ((emacs "24.4") (seq "2.20"))
-;; URL: https://github.com/rnkn/binder
+;; URL: https://codeberg.org/divyaranjan/binder/
 
 ;; This file is not part of GNU Emacs.
 
